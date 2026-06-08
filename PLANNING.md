@@ -13,7 +13,7 @@ Recreate the useful parts of the Spline robot interaction as a standalone Three.
 - [x] Add hover visual emphasis.
 - [x] Add click-triggered active state.
 - [x] Build as a static Vite site.
-- [ ] Push to GitHub.
+- [x] Push to GitHub.
 
 ## Notes
 

@@ -7,4 +7,4 @@
 - [x] Implemented pointer-follow motion.
 - [x] Implemented hover and click states.
 - [x] Build verified.
-- [ ] Git initialized, committed, and pushed.
+- [x] Git initialized, committed, and pushed.
