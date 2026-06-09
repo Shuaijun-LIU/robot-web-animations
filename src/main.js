@@ -72,7 +72,9 @@ let hovered = false;
 let active = false;
 let lastPointerAt = performance.now();
 
-loader.load('/models/robot.glb', (gltf) => {
+const modelUrl = `${import.meta.env.BASE_URL}models/robot.glb`;
+
+loader.load(modelUrl, (gltf) => {
   robotScene = gltf.scene;
   normalizeModel(robotScene, 3.05);
   robotScene.traverse((object) => {
