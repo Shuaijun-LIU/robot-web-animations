@@ -237,19 +237,55 @@ function createSparkleMaterial() {
 }
 
 function createFocusSparkles() {
-  const sparkles = [];
-  const sizes = [0.62, 0.24, 0.16, 0.1];
-  sizes.forEach((size, index) => {
-    const sparkle = new THREE.Sprite(createSparkleMaterial());
-    sparkle.scale.setScalar(size);
-    sparkle.userData.baseScale = size;
-    sparkle.userData.offset = new THREE.Vector3();
-    sparkle.userData.opacityWeight = index === 0 ? 1 : 0.76 - index * 0.1;
-    sparkle.visible = false;
-    starRoot.add(sparkle);
-    sparkles.push(sparkle);
-  });
-  return sparkles;
+  const starClusters = [
+    {
+      gaze: [-0.78, 0.45],
+      stars: [
+        { position: [-1.55, 1.88, -0.1], size: 0.62, delay: 0 },
+        { position: [-1.23, 2.15, -0.16], size: 0.24, delay: 0.16 },
+        { position: [-1.78, 1.58, 0.02], size: 0.16, delay: 0.28 },
+      ],
+    },
+    {
+      gaze: [0.32, 0.78],
+      stars: [
+        { position: [0.38, 2.38, -0.32], size: 0.76, delay: 0.11 },
+        { position: [0.1, 2.07, -0.25], size: 0.22, delay: 0.25 },
+      ],
+    },
+    {
+      gaze: [0.86, 0.18],
+      stars: [
+        { position: [1.62, 1.5, -0.02], size: 0.54, delay: 0.08 },
+        { position: [1.93, 1.88, -0.12], size: 0.2, delay: 0.2 },
+        { position: [1.35, 1.22, 0.1], size: 0.14, delay: 0.36 },
+      ],
+    },
+    {
+      gaze: [-0.18, 0.22],
+      stars: [
+        { position: [-0.28, 1.62, 0.16], size: 0.42, delay: 0.18 },
+        { position: [-0.55, 1.84, 0.05], size: 0.14, delay: 0.3 },
+      ],
+    },
+  ];
+
+  return starClusters.flatMap((cluster, clusterIndex) =>
+    cluster.stars.map((item, starIndex) => {
+      const sparkle = new THREE.Sprite(createSparkleMaterial());
+      sparkle.position.set(...item.position);
+      sparkle.scale.setScalar(item.size);
+      sparkle.userData.basePosition = sparkle.position.clone();
+      sparkle.userData.baseScale = item.size;
+      sparkle.userData.cluster = clusterIndex;
+      sparkle.userData.delay = item.delay;
+      sparkle.userData.gaze = new THREE.Vector2(...cluster.gaze);
+      sparkle.userData.opacityWeight = starIndex === 0 ? 1 : 0.72 - starIndex * 0.08;
+      sparkle.visible = false;
+      starRoot.add(sparkle);
+      return sparkle;
+    }),
+  );
 }
 
 function isEyeSphere(object) {
@@ -372,16 +408,14 @@ function updateFocusStars(seconds) {
   const visibleDuration = 1.55;
   const cycle = Math.floor(seconds / interval);
   const localTime = seconds - cycle * interval;
+  const clusterCount = Math.max(...focusStars.map((star) => star.userData.cluster)) + 1;
+  const activeCluster = cycle % clusterCount;
+  const activeStar = focusStars.find((star) => star.userData.cluster === activeCluster) || focusStars[0];
 
   if (cycle !== starState.cycle) {
     starState.cycle = cycle;
-    const center = randomStarCenter();
-    starState.gaze.set(center.x / 2.45, (center.y - 1.35) / 1.35).clampScalar(-1, 1);
-    focusStars.forEach((star, index) => {
-      const offset = randomSparkleOffset(index);
-      star.userData.offset.copy(offset);
-      star.position.copy(center).add(offset);
-      star.userData.basePosition = star.position.clone();
+    starState.gaze.copy(activeStar.userData.gaze);
+    focusStars.forEach((star) => {
       star.material.opacity = 0;
       star.visible = false;
     });
@@ -389,8 +423,9 @@ function updateFocusStars(seconds) {
 
   const envelope = localTime < visibleDuration ? Math.sin((localTime / visibleDuration) * Math.PI) : 0;
   focusStars.forEach((star, index) => {
-    const delayedEnvelope = localTime < visibleDuration
-      ? Math.max(0, Math.sin(((localTime - index * 0.08) / visibleDuration) * Math.PI))
+    const isActive = star.userData.cluster === activeCluster;
+    const delayedEnvelope = isActive && localTime < visibleDuration
+      ? Math.max(0, Math.sin(((localTime - star.userData.delay) / visibleDuration) * Math.PI))
       : 0;
     const opacity = Math.pow(delayedEnvelope, 1.2) * star.userData.opacityWeight;
     const pulse = 1 + Math.sin(localTime * 6 + index) * 0.08 * envelope;
@@ -402,24 +437,6 @@ function updateFocusStars(seconds) {
   });
 
   return starState.gaze.clone().multiplyScalar(Math.min(1, envelope * 1.25));
-}
-
-function randomStarCenter() {
-  return new THREE.Vector3(
-    THREE.MathUtils.randFloat(-2.55, 2.35),
-    THREE.MathUtils.randFloat(1.12, 2.82),
-    THREE.MathUtils.randFloat(-0.48, 0.22),
-  );
-}
-
-function randomSparkleOffset(index) {
-  if (index === 0) return new THREE.Vector3();
-  const spread = index === 1 ? 0.34 : index === 2 ? 0.5 : 0.18;
-  return new THREE.Vector3(
-    THREE.MathUtils.randFloatSpread(spread),
-    THREE.MathUtils.randFloatSpread(spread * 0.9),
-    THREE.MathUtils.randFloatSpread(0.08),
-  );
 }
 
 renderer.setAnimationLoop(animate);
