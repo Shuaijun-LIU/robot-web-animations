@@ -236,11 +236,11 @@ function createSparkleMaterial() {
 function createFocusSparkles() {
   const starClusters = [
     {
-      gaze: [-0.95, 0.62],
+      gaze: [-0.95, -0.2],
       stars: [
-        { position: [-3.1, 2.48, -0.32], size: 0.58, delay: 0.05 },
-        { position: [-3.42, 2.12, -0.22], size: 0.2, delay: 0.2 },
-        { position: [-2.9, 2.82, -0.18], size: 0.14, delay: 0.34 },
+        { position: [-3.1, 0.82, -0.32], size: 0.58, delay: 0.05 },
+        { position: [-3.42, 0.5, -0.22], size: 0.2, delay: 0.2 },
+        { position: [-2.9, 1.18, -0.18], size: 0.14, delay: 0.34 },
       ],
     },
     {
@@ -282,11 +282,11 @@ function createFocusSparkles() {
       ],
     },
     {
-      gaze: [0.96, 0.52],
+      gaze: [0.96, -0.24],
       stars: [
-        { position: [3.24, 2.04, -0.28], size: 0.56, delay: 0.02 },
-        { position: [3.52, 2.38, -0.2], size: 0.19, delay: 0.18 },
-        { position: [3.02, 1.68, -0.08], size: 0.15, delay: 0.32 },
+        { position: [3.24, 0.68, -0.28], size: 0.56, delay: 0.02 },
+        { position: [3.52, 1.02, -0.2], size: 0.19, delay: 0.18 },
+        { position: [3.02, 0.34, -0.08], size: 0.15, delay: 0.32 },
       ],
     },
   ];
