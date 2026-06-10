@@ -7,15 +7,16 @@ const canvas = document.querySelector('#scene');
 document.body.classList.add('loading');
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#111315');
-scene.fog = new THREE.Fog('#111315', 8, 17);
+scene.background = null;
+scene.fog = new THREE.Fog('#101214', 8, 18);
 
 const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.set(0.15, 1.35, 6.2);
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor('#000000', 0);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -48,37 +49,22 @@ scene.add(rim);
 scene.add(new THREE.HemisphereLight('#dce6ef', '#171819', 0.82));
 
 const floor = new THREE.Mesh(
-  new THREE.CircleGeometry(3.8, 96),
-  new THREE.MeshStandardMaterial({
-    color: '#181b1e',
-    roughness: 0.72,
-    metalness: 0.12,
+  new THREE.PlaneGeometry(12, 12),
+  new THREE.ShadowMaterial({
+    color: '#000000',
+    opacity: 0.22,
   }),
 );
 floor.rotation.x = -Math.PI / 2;
-floor.position.y = -1.05;
+floor.position.y = -1.055;
 floor.receiveShadow = true;
 scene.add(floor);
 
-const grid = new THREE.GridHelper(7.2, 36, '#54616d', '#2a3035');
+const grid = new THREE.GridHelper(8.8, 44, '#4a545d', '#252b30');
 grid.position.y = -1.035;
 grid.material.transparent = true;
-grid.material.opacity = 0.18;
+grid.material.opacity = 0.08;
 scene.add(grid);
-
-const backPanel = new THREE.Mesh(
-  new THREE.PlaneGeometry(7.5, 4.6),
-  new THREE.MeshStandardMaterial({
-    color: '#15191d',
-    roughness: 0.9,
-    metalness: 0.05,
-    transparent: true,
-    opacity: 0.72,
-  }),
-);
-backPanel.position.set(0, 1.3, -2.25);
-backPanel.receiveShadow = true;
-scene.add(backPanel);
 
 const loader = new GLTFLoader();
 const robotRoot = new THREE.Group();
