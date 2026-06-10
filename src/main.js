@@ -21,7 +21,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.86;
+renderer.toneMappingExposure = 0.8;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enablePan = false;
@@ -32,29 +32,29 @@ controls.maxDistance = 8;
 controls.maxPolarAngle = Math.PI * 0.68;
 controls.target.set(0, 0.65, 0);
 
-const key = new THREE.SpotLight('#fff1dc', 7.2, 14, 0.55, 0.55, 1.2);
+const key = new THREE.SpotLight('#fff1dc', 3.2, 14, 0.55, 0.55, 1.2);
 key.position.set(2.6, 4.8, 4.2);
 key.castShadow = true;
 key.shadow.mapSize.set(1024, 1024);
 scene.add(key);
 
-const fill = new THREE.SpotLight('#a7c8e8', 1.9, 12, 0.7, 0.72, 1.5);
+const fill = new THREE.SpotLight('#a7c8e8', 0.65, 12, 0.7, 0.72, 1.5);
 fill.position.set(-4.2, 2.7, 3.6);
 scene.add(fill);
 
-const rim = new THREE.DirectionalLight('#d8e6ff', 1.1);
+const rim = new THREE.DirectionalLight('#d8e6ff', 0.45);
 rim.position.set(-3.8, 2.2, -4.4);
 scene.add(rim);
 
-const overhead = new THREE.SpotLight('#8f7bff', 8.8, 8.5, 0.34, 0.72, 1.35);
-overhead.position.set(0, 4.25, 0.75);
+const overhead = new THREE.SpotLight('#8b6cff', 18, 9.5, 0.42, 0.78, 1.15);
+overhead.position.set(0, 4.55, 0.45);
 overhead.target.position.set(0, 0.75, 0);
 overhead.castShadow = true;
 overhead.shadow.mapSize.set(1024, 1024);
 scene.add(overhead);
 scene.add(overhead.target);
 
-scene.add(new THREE.HemisphereLight('#dce6ef', '#171819', 0.82));
+scene.add(new THREE.HemisphereLight('#dce6ef', '#171819', 0.34));
 
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(12, 12),
@@ -163,6 +163,12 @@ function createRobotMaterial(object) {
 
   if (isEyeSphere(object)) {
     return createEyeMaterial();
+  } else if (isPedestalPart(object)) {
+    material.color = new THREE.Color('#252336');
+    material.emissive = new THREE.Color('#0b0818');
+    material.emissiveIntensity = 0.08;
+    material.roughness = 0.62;
+    material.metalness = 0.2;
   } else if (/Ojos|Boolean 2/i.test(lineage)) {
     material.color = new THREE.Color('#20262b');
     material.emissive = new THREE.Color('#05080a');
@@ -196,11 +202,11 @@ function createRobotMaterial(object) {
 
 function createEyeMaterial() {
   const material = new THREE.MeshStandardMaterial({
-    color: '#ded8cf',
+    color: '#ece8df',
     emissive: '#000000',
     emissiveIntensity: 0,
-    roughness: 0.34,
-    metalness: 0.08,
+    roughness: 0.88,
+    metalness: 0,
   });
   material.userData.baseColor = material.color.clone();
   material.userData.baseEmissive = material.emissive.clone();
@@ -248,6 +254,11 @@ function createFallbackStarGeometry() {
 function isEyeSphere(object) {
   const normalized = object.name.toLowerCase().replace(/[_-]/g, ' ');
   return normalized === 'sphere 2' || normalized === 'sphere 3';
+}
+
+function isPedestalPart(object) {
+  const isTopLevel = object.parent?.name === 'Scene 1';
+  return isTopLevel && (object.name === 'Plane' || object.name === 'Cube');
 }
 
 function findEyeSpheres(root) {
