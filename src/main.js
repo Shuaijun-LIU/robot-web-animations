@@ -46,6 +46,14 @@ const rim = new THREE.DirectionalLight('#d8e6ff', 1.1);
 rim.position.set(-3.8, 2.2, -4.4);
 scene.add(rim);
 
+const overhead = new THREE.SpotLight('#8f7bff', 8.8, 8.5, 0.34, 0.72, 1.35);
+overhead.position.set(0, 4.25, 0.75);
+overhead.target.position.set(0, 0.75, 0);
+overhead.castShadow = true;
+overhead.shadow.mapSize.set(1024, 1024);
+scene.add(overhead);
+scene.add(overhead.target);
+
 scene.add(new THREE.HemisphereLight('#dce6ef', '#171819', 0.82));
 
 const floor = new THREE.Mesh(
@@ -153,11 +161,11 @@ function createRobotMaterial(object) {
 
 function createEyeMaterial() {
   const material = new THREE.MeshStandardMaterial({
-    color: '#78b9df',
-    emissive: '#2f86bb',
-    emissiveIntensity: 0.7,
-    roughness: 0.16,
-    metalness: 0.04,
+    color: '#ded8cf',
+    emissive: '#000000',
+    emissiveIntensity: 0,
+    roughness: 0.34,
+    metalness: 0.08,
   });
   material.userData.baseColor = material.color.clone();
   material.userData.baseEmissive = material.emissive.clone();
