@@ -7,8 +7,8 @@ const canvas = document.querySelector('#scene');
 document.body.classList.add('loading');
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#101214');
-scene.fog = new THREE.Fog('#101214', 7, 14);
+scene.background = new THREE.Color('#0c1012');
+scene.fog = new THREE.Fog('#0c1012', 8, 17);
 
 const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.set(0.15, 1.35, 6.2);
@@ -20,7 +20,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 0.92;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enablePan = false;
@@ -31,22 +31,26 @@ controls.maxDistance = 8;
 controls.maxPolarAngle = Math.PI * 0.68;
 controls.target.set(0, 0.65, 0);
 
-const key = new THREE.SpotLight('#ffffff', 18, 12, 0.52, 0.55, 1.1);
-key.position.set(2.8, 4.4, 4.5);
+const key = new THREE.SpotLight('#fff3df', 8.5, 14, 0.55, 0.55, 1.2);
+key.position.set(2.6, 4.8, 4.2);
 key.castShadow = true;
 key.shadow.mapSize.set(1024, 1024);
 scene.add(key);
 
-const fill = new THREE.SpotLight('#b7e8ff', 5, 10, 0.7, 0.65, 1.5);
-fill.position.set(-3.5, 2.5, 3.2);
+const fill = new THREE.SpotLight('#8cd7ff', 2.6, 12, 0.7, 0.72, 1.5);
+fill.position.set(-4.2, 2.7, 3.6);
 scene.add(fill);
 
-scene.add(new THREE.HemisphereLight('#dfefff', '#22201c', 1.5));
+const rim = new THREE.DirectionalLight('#56d39a', 1.5);
+rim.position.set(-3.8, 2.2, -4.4);
+scene.add(rim);
+
+scene.add(new THREE.HemisphereLight('#dbeeff', '#151716', 0.95));
 
 const floor = new THREE.Mesh(
   new THREE.CircleGeometry(3.8, 96),
   new THREE.MeshStandardMaterial({
-    color: '#191c1d',
+    color: '#13191a',
     roughness: 0.72,
     metalness: 0.12,
   }),
@@ -55,6 +59,26 @@ floor.rotation.x = -Math.PI / 2;
 floor.position.y = -1.05;
 floor.receiveShadow = true;
 scene.add(floor);
+
+const grid = new THREE.GridHelper(7.2, 36, '#2dd08b', '#253134');
+grid.position.y = -1.035;
+grid.material.transparent = true;
+grid.material.opacity = 0.28;
+scene.add(grid);
+
+const backPanel = new THREE.Mesh(
+  new THREE.PlaneGeometry(7.5, 4.6),
+  new THREE.MeshStandardMaterial({
+    color: '#101719',
+    roughness: 0.9,
+    metalness: 0.05,
+    transparent: true,
+    opacity: 0.72,
+  }),
+);
+backPanel.position.set(0, 1.3, -2.25);
+backPanel.receiveShadow = true;
+scene.add(backPanel);
 
 const loader = new GLTFLoader();
 const robotRoot = new THREE.Group();
@@ -83,8 +107,7 @@ loader.load(modelUrl, (gltf) => {
       object.receiveShadow = true;
       clickableMeshes.push(object);
       if (object.material) {
-        object.material = object.material.clone();
-        object.material.roughness = Math.min(object.material.roughness ?? 0.55, 0.62);
+        object.material = createRobotMaterial(object);
       }
     }
   });
@@ -96,6 +119,49 @@ loader.load(modelUrl, (gltf) => {
   robotRoot.add(robotScene);
   document.body.classList.remove('loading');
 });
+
+function createRobotMaterial(object) {
+  const material = object.material.clone();
+  const lineage = getLineage(object).join(' ');
+  material.roughness = 0.48;
+  material.metalness = 0.18;
+
+  if (/Ojos|Sphere 2|Sphere 3|Boolean 2/i.test(lineage)) {
+    material.color = new THREE.Color('#6fffd0');
+    material.emissive = new THREE.Color('#1ae9ac');
+    material.emissiveIntensity = 0.55;
+    material.roughness = 0.22;
+    material.metalness = 0.05;
+  } else if (/Cabeza|Boolean|Ears|Cylinder/i.test(lineage)) {
+    material.color = new THREE.Color('#f0f4e8');
+    material.roughness = 0.38;
+  } else if (/Cuerpo|Cube/i.test(lineage)) {
+    material.color = new THREE.Color('#47c78f');
+    material.roughness = 0.46;
+    material.metalness = 0.22;
+  } else if (/Button|Botón|Text/i.test(lineage)) {
+    material.color = new THREE.Color('#ffcc5c');
+    material.emissive = new THREE.Color('#4d3200');
+    material.emissiveIntensity = 0.25;
+    material.roughness = 0.35;
+  } else {
+    material.color = new THREE.Color('#aeb8b1');
+  }
+
+  material.userData.baseColor = material.color.clone();
+  material.userData.baseEmissive = material.emissive ? material.emissive.clone() : new THREE.Color('#000000');
+  return material;
+}
+
+function getLineage(object) {
+  const names = [];
+  let current = object;
+  while (current) {
+    if (current.name) names.push(current.name);
+    current = current.parent;
+  }
+  return names;
+}
 
 window.addEventListener('pointermove', (event) => {
   pointerTarget.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -136,12 +202,12 @@ function tintObject(object, amount) {
   object.traverse((child) => {
     if (!child.isMesh || !child.material) return;
     const material = child.material;
-    if (!material.userData.baseEmissive && material.emissive) {
-      material.userData.baseEmissive = material.emissive.clone();
+    if (material.color && material.userData.baseColor) {
+      material.color.copy(material.userData.baseColor).lerp(new THREE.Color('#ffffff'), amount * 0.16);
     }
     if (material.emissive) {
       material.emissive.copy(material.userData.baseEmissive).lerp(new THREE.Color('#51d78b'), amount);
-      material.emissiveIntensity = amount * 0.75;
+      material.emissiveIntensity = (material.userData.baseEmissive.getHex() !== 0 ? 0.35 : 0) + amount * 0.7;
     }
   });
 }
