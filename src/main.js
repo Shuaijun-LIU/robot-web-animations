@@ -87,7 +87,6 @@ const raycaster = new THREE.Raycaster();
 const clickableMeshes = [];
 let robotScene;
 let head;
-let eyes;
 let button;
 let eyeSpheres = [];
 let focusStars = [];
@@ -113,7 +112,6 @@ loader.load(modelUrl, (gltf) => {
   });
 
   head = robotScene.getObjectByName('Cabeza');
-  eyes = robotScene.getObjectByName('Ojos');
   button = robotScene.getObjectByName('Button') || robotScene.getObjectByName('Botón');
   eyeSpheres = findEyeSpheres(robotScene);
   eyeSpheres.forEach((eye) => {
@@ -340,11 +338,6 @@ function animate(time) {
       head.rotation.y += (focusX * 0.56 - head.rotation.y) * 0.1;
       head.rotation.x += (-focusY * 0.26 - head.rotation.x) * 0.1;
       head.rotation.z = Math.sin(seconds * 1.4) * (active ? 0.045 : 0.018);
-    }
-
-    if (eyes) {
-      eyes.rotation.y += (focusX * 0.38 - eyes.rotation.y) * 0.13;
-      eyes.rotation.x += (-focusY * 0.24 - eyes.rotation.x) * 0.13;
     }
 
     tintObject(button || robotScene, hovered || active ? 0.55 : 0);
