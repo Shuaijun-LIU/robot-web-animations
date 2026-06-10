@@ -92,6 +92,7 @@ let robotScene;
 let head;
 let eyes;
 let button;
+let eyeSpheres = [];
 let hovered = false;
 let active = false;
 let lastPointerAt = performance.now();
@@ -115,6 +116,11 @@ loader.load(modelUrl, (gltf) => {
   head = robotScene.getObjectByName('Cabeza');
   eyes = robotScene.getObjectByName('Ojos');
   button = robotScene.getObjectByName('Button') || robotScene.getObjectByName('Botón');
+  eyeSpheres = findEyeSpheres(robotScene);
+  eyeSpheres.forEach((eye) => {
+    eye.material = createEyeMaterial();
+    eye.scale.multiplyScalar(1.08);
+  });
 
   robotRoot.add(robotScene);
   document.body.classList.remove('loading');
@@ -126,12 +132,8 @@ function createRobotMaterial(object) {
   material.roughness = 0.54;
   material.metalness = 0.14;
 
-  if (/^Sphere 2$|^Sphere 3$/i.test(object.name)) {
-    material.color = new THREE.Color('#78b9df');
-    material.emissive = new THREE.Color('#1b5f86');
-    material.emissiveIntensity = 0.38;
-    material.roughness = 0.18;
-    material.metalness = 0.08;
+  if (isEyeSphere(object)) {
+    return createEyeMaterial();
   } else if (/Ojos|Boolean 2/i.test(lineage)) {
     material.color = new THREE.Color('#20262b');
     material.emissive = new THREE.Color('#05080a');
@@ -161,6 +163,34 @@ function createRobotMaterial(object) {
   material.userData.baseColor = material.color.clone();
   material.userData.baseEmissive = material.emissive ? material.emissive.clone() : new THREE.Color('#000000');
   return material;
+}
+
+function createEyeMaterial() {
+  const material = new THREE.MeshStandardMaterial({
+    color: '#78b9df',
+    emissive: '#2f86bb',
+    emissiveIntensity: 0.7,
+    roughness: 0.16,
+    metalness: 0.04,
+  });
+  material.userData.baseColor = material.color.clone();
+  material.userData.baseEmissive = material.emissive.clone();
+  return material;
+}
+
+function isEyeSphere(object) {
+  const normalized = object.name.toLowerCase().replace(/[_-]/g, ' ');
+  return normalized === 'sphere 2' || normalized === 'sphere 3';
+}
+
+function findEyeSpheres(root) {
+  const result = [];
+  root.traverse((object) => {
+    if (object.isMesh && isEyeSphere(object)) {
+      result.push(object);
+    }
+  });
+  return result;
 }
 
 function getLineage(object) {
