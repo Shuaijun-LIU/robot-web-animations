@@ -75,6 +75,9 @@ scene.add(robotRoot);
 const starRoot = new THREE.Group();
 scene.add(starRoot);
 
+const labSign = createLabSign();
+scene.add(labSign.group);
+
 const pointer = new THREE.Vector2();
 const pointerTarget = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
@@ -93,6 +96,9 @@ const sparkleTexture = createSparkleTexture();
 const starState = {
   cycle: -1,
   gaze: new THREE.Vector2(),
+};
+const signState = {
+  cycle: -1,
 };
 
 loader.load(modelUrl, (gltf) => {
@@ -231,6 +237,141 @@ function createSparkleMaterial() {
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
+}
+
+function createLabSign() {
+  const group = new THREE.Group();
+  group.position.set(-1.45, -0.98, 0.72);
+  group.rotation.y = 0.16;
+
+  const boardPivot = new THREE.Group();
+  boardPivot.position.y = 0.78;
+  group.add(boardPivot);
+
+  const palette = [
+    { board: '#191d31', edge: '#5663ff', text: '#f6fbff', accent: '#91c7ff' },
+    { board: '#261636', edge: '#9a6cff', text: '#fff3c1', accent: '#d7b2ff' },
+    { board: '#102b35', edge: '#38d9c9', text: '#f9fffb', accent: '#8af2df' },
+    { board: '#2b2113', edge: '#f2b64d', text: '#f8fbff', accent: '#ffd878' },
+  ];
+  const texture = createSignTexture(palette[0]);
+  const frontMaterial = new THREE.MeshStandardMaterial({
+    map: texture,
+    roughness: 0.48,
+    metalness: 0.12,
+    emissive: '#080914',
+    emissiveIntensity: 0.24,
+  });
+  const backMaterial = new THREE.MeshStandardMaterial({
+    color: palette[0].board,
+    roughness: 0.5,
+    metalness: 0.24,
+  });
+  const edgeMaterial = new THREE.MeshStandardMaterial({
+    color: palette[0].edge,
+    emissive: palette[0].edge,
+    emissiveIntensity: 0.16,
+    roughness: 0.36,
+    metalness: 0.42,
+  });
+
+  const backing = new THREE.Mesh(new THREE.BoxGeometry(1.64, 0.62, 0.08), backMaterial);
+  backing.castShadow = true;
+  backing.receiveShadow = true;
+  boardPivot.add(backing);
+
+  const front = new THREE.Mesh(new THREE.PlaneGeometry(1.48, 0.48), frontMaterial);
+  front.position.z = 0.045;
+  front.castShadow = true;
+  boardPivot.add(front);
+
+  const topRail = new THREE.Mesh(new THREE.BoxGeometry(1.68, 0.035, 0.105), edgeMaterial);
+  topRail.position.y = 0.33;
+  boardPivot.add(topRail);
+
+  const bottomRail = topRail.clone();
+  bottomRail.position.y = -0.33;
+  boardPivot.add(bottomRail);
+
+  const leftRail = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.66, 0.105), edgeMaterial);
+  leftRail.position.x = -0.86;
+  boardPivot.add(leftRail);
+
+  const rightRail = leftRail.clone();
+  rightRail.position.x = 0.86;
+  boardPivot.add(rightRail);
+
+  const postMaterial = new THREE.MeshStandardMaterial({
+    color: '#232538',
+    roughness: 0.5,
+    metalness: 0.32,
+  });
+  const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.78, 0.08), postMaterial);
+  post.position.y = 0.35;
+  post.castShadow = true;
+  post.receiveShadow = true;
+  group.add(post);
+
+  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.08, 0.36), postMaterial);
+  foot.position.y = -0.04;
+  foot.castShadow = true;
+  foot.receiveShadow = true;
+  group.add(foot);
+
+  return {
+    group,
+    boardPivot,
+    texture,
+    backMaterial,
+    edgeMaterial,
+    palette,
+  };
+}
+
+function createSignTexture(colors) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 512;
+  const context = canvas.getContext('2d');
+  drawSignTexture(context, colors, canvas.width, canvas.height);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
+  return texture;
+}
+
+function drawSignTexture(context, colors, width, height) {
+  const gradient = context.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, colors.board);
+  gradient.addColorStop(0.54, '#070911');
+  gradient.addColorStop(1, colors.edge);
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, width, height);
+
+  const glow = context.createRadialGradient(width * 0.28, height * 0.28, 20, width * 0.28, height * 0.28, width * 0.62);
+  glow.addColorStop(0, `${colors.accent}99`);
+  glow.addColorStop(0.34, `${colors.accent}24`);
+  glow.addColorStop(1, `${colors.accent}00`);
+  context.fillStyle = glow;
+  context.fillRect(0, 0, width, height);
+
+  context.strokeStyle = `${colors.edge}cc`;
+  context.lineWidth = 12;
+  context.strokeRect(32, 32, width - 64, height - 64);
+
+  context.font = '800 128px Inter, Arial, sans-serif';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.shadowColor = `${colors.accent}aa`;
+  context.shadowBlur = 22;
+  context.fillStyle = colors.text;
+  context.fillText('Nebulis Lab', width / 2, height / 2 + 12);
+
+  context.shadowBlur = 0;
+  context.font = '700 34px Inter, Arial, sans-serif';
+  context.letterSpacing = '6px';
+  context.fillStyle = `${colors.accent}e6`;
+  context.fillText('EMBODIED AI', width / 2, height - 82);
 }
 
 function createFocusSparkles() {
@@ -418,7 +559,34 @@ function animate(time) {
   }
 
   controls.update();
+  updateLabSign(seconds);
   renderer.render(scene, camera);
+}
+
+function updateLabSign(seconds) {
+  const interval = 14;
+  const flipDuration = 1.8;
+  const cycle = Math.floor(seconds / interval);
+  const localTime = seconds - cycle * interval;
+
+  if (cycle !== signState.cycle) {
+    signState.cycle = cycle;
+    const colors = labSign.palette[cycle % labSign.palette.length];
+    const context = labSign.texture.image.getContext('2d');
+    drawSignTexture(context, colors, labSign.texture.image.width, labSign.texture.image.height);
+    labSign.texture.needsUpdate = true;
+    labSign.backMaterial.color.set(colors.board);
+    labSign.edgeMaterial.color.set(colors.edge);
+    labSign.edgeMaterial.emissive.set(colors.edge);
+  }
+
+  if (localTime < flipDuration) {
+    const t = localTime / flipDuration;
+    const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
+    labSign.boardPivot.rotation.y = eased * Math.PI * 2;
+  } else {
+    labSign.boardPivot.rotation.y = 0;
+  }
 }
 
 function updateFocusStars(seconds) {

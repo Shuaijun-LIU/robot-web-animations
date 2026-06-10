@@ -29,30 +29,52 @@ canvas {
   height: 100%;
 }
 
-.hud {
+.brand-panel {
   position: fixed;
-  top: 22px;
-  left: 22px;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  height: 34px;
-  padding: 0 14px;
-  color: rgba(248, 248, 248, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 8px;
-  background: rgba(10, 12, 13, 0.46);
-  backdrop-filter: blur(12px);
-  font-size: 13px;
+  top: 11vh;
+  left: 6.2vw;
+  z-index: 2;
+  width: min(720px, 46vw);
+  pointer-events: none;
+}
+
+.brand-kicker {
+  margin: 0 0 14px;
+  color: rgba(145, 190, 255, 0.84);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.brand-panel h1 {
+  margin: 0;
+  color: transparent;
+  background:
+    linear-gradient(115deg, #ffffff 0%, #b8ecff 25%, #778cff 48%, #f8fbff 64%, #6aa9ff 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  filter: drop-shadow(0 0 18px rgba(108, 142, 255, 0.26)) drop-shadow(0 10px 34px rgba(0, 0, 0, 0.8));
+  font-size: clamp(58px, 8.8vw, 132px);
+  font-weight: 850;
+  line-height: 0.86;
   letter-spacing: 0;
 }
 
-.mark {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #9dc4df;
-  box-shadow: 0 0 18px rgba(157, 196, 223, 0.45);
+.brand-slogan {
+  max-width: 670px;
+  margin: 24px 0 0;
+  color: transparent;
+  background:
+    linear-gradient(90deg, #ffe8a8 0%, #f8b84b 34%, #fff9da 52%, #cfe7ff 78%, #9cc4ff 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  text-shadow: 0 0 24px rgba(255, 202, 98, 0.18);
+  font-size: clamp(19px, 1.8vw, 30px);
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: 0;
 }
 
 .loading {
@@ -60,10 +82,25 @@ canvas {
 }
 
 @media (max-width: 640px) {
-  .hud {
-    top: 14px;
-    left: 14px;
-    height: 32px;
-    padding: 0 12px;
+  .brand-panel {
+    top: 7vh;
+    left: 7vw;
+    width: 86vw;
+  }
+
+  .brand-kicker {
+    margin-bottom: 10px;
+    font-size: 10px;
+  }
+
+  .brand-panel h1 {
+    font-size: clamp(46px, 16vw, 76px);
+  }
+
+  .brand-slogan {
+    max-width: 82vw;
+    margin-top: 16px;
+    font-size: 17px;
+    line-height: 1.25;
   }
 }
