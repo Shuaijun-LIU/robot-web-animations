@@ -79,19 +79,15 @@ canvas {
 
 .lab-logo {
   position: fixed;
-  top: 24px;
-  right: 28px;
+  top: 28px;
+  right: 32px;
   z-index: 3;
   display: block;
-  width: min(360px, 24vw);
+  width: min(132px, 13vw);
   height: auto;
-  padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 8px;
-  background: rgba(245, 249, 255, 0.9);
-  box-shadow:
-    0 0 28px rgba(118, 154, 255, 0.14),
-    0 18px 48px rgba(0, 0, 0, 0.34);
+  filter:
+    drop-shadow(0 0 18px rgba(53, 215, 236, 0.32))
+    drop-shadow(0 12px 28px rgba(41, 45, 255, 0.2));
   pointer-events: none;
 }
 
@@ -125,7 +121,6 @@ canvas {
   .lab-logo {
     top: 14px;
     right: 14px;
-    width: min(210px, 42vw);
-    padding: 8px 10px;
+    width: min(92px, 22vw);
   }
 }

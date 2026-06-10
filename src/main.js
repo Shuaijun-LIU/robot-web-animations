@@ -46,9 +46,9 @@ const rim = new THREE.DirectionalLight('#d8e6ff', 0.45);
 rim.position.set(-3.8, 2.2, -4.4);
 scene.add(rim);
 
-const overhead = new THREE.SpotLight('#8e70ff', 32, 12, 0.68, 0.82, 0.95);
-overhead.position.set(0, 5.1, 1.05);
-overhead.target.position.set(0, 0.35, 0);
+const overhead = new THREE.SpotLight('#8e70ff', 42, 12, 0.34, 0.62, 1.05);
+overhead.position.set(0, 5.35, 1.0);
+overhead.target.position.set(0, 0.1, 0);
 overhead.castShadow = true;
 overhead.shadow.mapSize.set(1024, 1024);
 scene.add(overhead);
@@ -74,6 +74,9 @@ scene.add(robotRoot);
 
 const starRoot = new THREE.Group();
 scene.add(starRoot);
+
+const platform = createCircularPlatform();
+robotRoot.add(platform);
 
 const pointer = new THREE.Vector2();
 const pointerTarget = new THREE.Vector2();
@@ -103,6 +106,9 @@ loader.load(modelUrl, (gltf) => {
       object.castShadow = true;
       object.receiveShadow = true;
       clickableMeshes.push(object);
+      if (isOriginalSquarePlatform(object)) {
+        object.visible = false;
+      }
       if (object.material) {
         object.material = createRobotMaterial(object);
       }
@@ -233,6 +239,45 @@ function createSparkleMaterial() {
   });
 }
 
+function createCircularPlatform() {
+  const group = new THREE.Group();
+  group.position.y = -1.09;
+
+  const topMaterial = new THREE.MeshStandardMaterial({
+    color: '#201c36',
+    emissive: '#110d2b',
+    emissiveIntensity: 0.18,
+    roughness: 0.5,
+    metalness: 0.22,
+  });
+  const edgeMaterial = new THREE.MeshStandardMaterial({
+    color: '#3c3570',
+    emissive: '#261b78',
+    emissiveIntensity: 0.16,
+    roughness: 0.38,
+    metalness: 0.36,
+  });
+
+  const base = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.28, 2.36, 0.14, 96),
+    [edgeMaterial, topMaterial, edgeMaterial],
+  );
+  base.castShadow = true;
+  base.receiveShadow = true;
+  group.add(base);
+
+  const rim = new THREE.Mesh(
+    new THREE.TorusGeometry(2.31, 0.035, 12, 128),
+    edgeMaterial,
+  );
+  rim.rotation.x = Math.PI / 2;
+  rim.position.y = 0.082;
+  rim.castShadow = true;
+  group.add(rim);
+
+  return group;
+}
+
 function createFocusSparkles() {
   const starClusters = [
     {
@@ -334,6 +379,11 @@ function isEyeSphere(object) {
 function isPedestalPart(object) {
   const isTopLevel = object.parent?.name === 'Scene 1';
   return isTopLevel && (object.name === 'Plane' || object.name === 'Cube');
+}
+
+function isOriginalSquarePlatform(object) {
+  const parentName = object.parent?.name;
+  return object.name === 'Plane' && (parentName === 'Scene 1' || parentName === 'Scene_1');
 }
 
 function findEyeSpheres(root) {
