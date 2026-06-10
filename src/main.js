@@ -78,6 +78,9 @@ const loader = new GLTFLoader();
 const robotRoot = new THREE.Group();
 scene.add(robotRoot);
 
+const starRoot = new THREE.Group();
+scene.add(starRoot);
+
 const pointer = new THREE.Vector2();
 const pointerTarget = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
@@ -87,11 +90,13 @@ let head;
 let eyes;
 let button;
 let eyeSpheres = [];
+let focusStars = [];
 let hovered = false;
 let active = false;
 let lastPointerAt = performance.now();
 
 const modelUrl = `${import.meta.env.BASE_URL}models/robot.glb`;
+const starSourceUrl = `${import.meta.env.BASE_URL}models/star_source_ai.glb`;
 
 loader.load(modelUrl, (gltf) => {
   robotScene = gltf.scene;
@@ -118,6 +123,38 @@ loader.load(modelUrl, (gltf) => {
 
   robotRoot.add(robotScene);
   document.body.classList.remove('loading');
+});
+
+loader.load(starSourceUrl, (gltf) => {
+  const sourceStar = findSourceStar(gltf.scene);
+  const geometry = sourceStar ? sourceStar.geometry.clone() : createFallbackStarGeometry();
+  geometry.computeBoundingBox();
+  geometry.center();
+
+  const size = geometry.boundingBox.getSize(new THREE.Vector3());
+  const scale = 0.28 / Math.max(size.x, size.y, size.z);
+  geometry.scale(scale, scale, scale);
+
+  const starLayout = [
+    { position: [-1.75, 1.35, 0.1], gaze: [-0.92, 0.1], delay: 0 },
+    { position: [-0.9, 2.02, -0.15], gaze: [-0.48, 0.62], delay: 0.18 },
+    { position: [0, 2.28, -0.28], gaze: [0, 0.82], delay: 0.36 },
+    { position: [0.9, 2.02, -0.15], gaze: [0.48, 0.62], delay: 0.54 },
+    { position: [1.75, 1.35, 0.1], gaze: [0.92, 0.1], delay: 0.72 },
+  ];
+
+  focusStars = starLayout.map((item) => {
+    const material = createStarMaterial();
+    const star = new THREE.Mesh(geometry, material);
+    star.position.set(...item.position);
+    star.rotation.set(0.2, 0.05, -0.12);
+    star.userData.gaze = new THREE.Vector2(...item.gaze);
+    star.userData.basePosition = star.position.clone();
+    star.userData.delay = item.delay;
+    star.castShadow = false;
+    starRoot.add(star);
+    return star;
+  });
 });
 
 function createRobotMaterial(object) {
@@ -170,6 +207,44 @@ function createEyeMaterial() {
   material.userData.baseColor = material.color.clone();
   material.userData.baseEmissive = material.emissive.clone();
   return material;
+}
+
+function createStarMaterial() {
+  return new THREE.MeshStandardMaterial({
+    color: '#d8d2c7',
+    emissive: '#6b5cff',
+    emissiveIntensity: 0.08,
+    roughness: 0.28,
+    metalness: 0.18,
+    transparent: true,
+    opacity: 0.55,
+  });
+}
+
+function findSourceStar(root) {
+  let result;
+  root.traverse((object) => {
+    if (!result && object.isMesh && /^Star/i.test(object.name)) {
+      result = object;
+    }
+  });
+  return result;
+}
+
+function createFallbackStarGeometry() {
+  const shape = new THREE.Shape();
+  const outer = 1;
+  const inner = 0.45;
+  for (let i = 0; i < 10; i += 1) {
+    const radius = i % 2 === 0 ? outer : inner;
+    const angle = (i / 10) * Math.PI * 2 - Math.PI / 2;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (i === 0) shape.moveTo(x, y);
+    else shape.lineTo(x, y);
+  }
+  shape.closePath();
+  return new THREE.ShapeGeometry(shape);
 }
 
 function isEyeSphere(object) {
@@ -250,25 +325,26 @@ function animate(time) {
   const seconds = time * 0.001;
   pointer.lerp(pointerTarget, 0.1);
   updateHover();
+  const focus = updateFocusStars(seconds);
 
   if (robotRoot) {
-    const idle = performance.now() - lastPointerAt > 2200;
-    const idleX = idle ? Math.sin(seconds * 0.55) * 0.18 : pointer.x * 0.34;
-    const idleY = idle ? Math.sin(seconds * 0.72) * 0.08 : pointer.y * 0.18;
+    const focusX = focus.x;
+    const focusY = focus.y;
+    const idleX = focusX * 0.18 + Math.sin(seconds * 0.55) * 0.025;
 
     robotRoot.rotation.y += (idleX - robotRoot.rotation.y) * 0.045;
     robotRoot.position.y = Math.sin(seconds * 1.35) * 0.035 + (active ? Math.sin(seconds * 5.2) * 0.018 : 0);
     robotRoot.scale.setScalar(1 + (hovered ? 0.025 : 0) + (active ? 0.035 : 0));
 
     if (head) {
-      head.rotation.y += (pointer.x * 0.46 - head.rotation.y) * 0.11;
-      head.rotation.x += (-pointer.y * 0.22 - head.rotation.x) * 0.11;
+      head.rotation.y += (focusX * 0.56 - head.rotation.y) * 0.1;
+      head.rotation.x += (-focusY * 0.26 - head.rotation.x) * 0.1;
       head.rotation.z = Math.sin(seconds * 1.4) * (active ? 0.045 : 0.018);
     }
 
     if (eyes) {
-      eyes.rotation.y += (pointer.x * 0.32 - eyes.rotation.y) * 0.14;
-      eyes.rotation.x += (-pointer.y * 0.2 - eyes.rotation.x) * 0.14;
+      eyes.rotation.y += (focusX * 0.38 - eyes.rotation.y) * 0.13;
+      eyes.rotation.x += (-focusY * 0.24 - eyes.rotation.x) * 0.13;
     }
 
     tintObject(button || robotScene, hovered || active ? 0.55 : 0);
@@ -280,6 +356,32 @@ function animate(time) {
 
   controls.update();
   renderer.render(scene, camera);
+}
+
+function updateFocusStars(seconds) {
+  if (focusStars.length === 0) {
+    return new THREE.Vector2(Math.sin(seconds * 0.6) * 0.3, Math.sin(seconds * 0.5) * 0.25);
+  }
+
+  const interval = 1.15;
+  const activeIndex = Math.floor(seconds / interval) % focusStars.length;
+  const activeStar = focusStars[activeIndex];
+
+  focusStars.forEach((star, index) => {
+    const activeAmount = index === activeIndex ? 1 : 0;
+    const shimmer = Math.max(0, Math.sin((seconds + star.userData.delay) * 5.4)) * 0.18;
+    const targetOpacity = activeAmount ? 1 : 0.38 + shimmer;
+    const targetGlow = activeAmount ? 1.25 + Math.sin(seconds * 9) * 0.25 : 0.08 + shimmer * 0.4;
+    const targetScale = activeAmount ? 1.45 + Math.sin(seconds * 8.5) * 0.08 : 1;
+
+    star.material.opacity += (targetOpacity - star.material.opacity) * 0.16;
+    star.material.emissiveIntensity += (targetGlow - star.material.emissiveIntensity) * 0.16;
+    star.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.16);
+    star.rotation.z += activeAmount ? 0.035 : 0.012;
+    star.position.y = star.userData.basePosition.y + Math.sin(seconds * 2.1 + index) * 0.025;
+  });
+
+  return activeStar.userData.gaze;
 }
 
 renderer.setAnimationLoop(animate);
