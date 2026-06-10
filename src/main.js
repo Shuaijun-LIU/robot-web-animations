@@ -46,9 +46,9 @@ const rim = new THREE.DirectionalLight('#d8e6ff', 0.45);
 rim.position.set(-3.8, 2.2, -4.4);
 scene.add(rim);
 
-const overhead = new THREE.SpotLight('#8b6cff', 18, 9.5, 0.42, 0.78, 1.15);
-overhead.position.set(0, 4.55, 0.45);
-overhead.target.position.set(0, 0.75, 0);
+const overhead = new THREE.SpotLight('#8e70ff', 32, 12, 0.68, 0.82, 0.95);
+overhead.position.set(0, 5.1, 1.05);
+overhead.target.position.set(0, 0.35, 0);
 overhead.castShadow = true;
 overhead.shadow.mapSize.set(1024, 1024);
 scene.add(overhead);
@@ -130,29 +130,59 @@ loader.load(starSourceUrl, (gltf) => {
   geometry.center();
 
   const size = geometry.boundingBox.getSize(new THREE.Vector3());
-  const scale = 0.28 / Math.max(size.x, size.y, size.z);
+  const scale = 0.26 / Math.max(size.x, size.y, size.z);
   geometry.scale(scale, scale, scale);
 
-  const starLayout = [
-    { position: [-1.75, 1.35, 0.1], gaze: [-0.92, 0.1], delay: 0 },
-    { position: [-0.9, 2.02, -0.15], gaze: [-0.48, 0.62], delay: 0.18 },
-    { position: [0, 2.28, -0.28], gaze: [0, 0.82], delay: 0.36 },
-    { position: [0.9, 2.02, -0.15], gaze: [0.48, 0.62], delay: 0.54 },
-    { position: [1.75, 1.35, 0.1], gaze: [0.92, 0.1], delay: 0.72 },
+  const starClusters = [
+    {
+      gaze: [-0.78, 0.45],
+      stars: [
+        { position: [-1.55, 1.88, -0.1], size: 1.1, delay: 0 },
+        { position: [-1.23, 2.15, -0.16], size: 0.42, delay: 0.16 },
+        { position: [-1.78, 1.58, 0.02], size: 0.32, delay: 0.28 },
+      ],
+    },
+    {
+      gaze: [0.32, 0.78],
+      stars: [
+        { position: [0.38, 2.38, -0.32], size: 1.34, delay: 0.11 },
+        { position: [0.1, 2.07, -0.25], size: 0.38, delay: 0.25 },
+      ],
+    },
+    {
+      gaze: [0.86, 0.18],
+      stars: [
+        { position: [1.62, 1.5, -0.02], size: 0.92, delay: 0.08 },
+        { position: [1.93, 1.88, -0.12], size: 0.34, delay: 0.2 },
+        { position: [1.35, 1.22, 0.1], size: 0.28, delay: 0.36 },
+      ],
+    },
+    {
+      gaze: [-0.18, 0.22],
+      stars: [
+        { position: [-0.28, 1.62, 0.16], size: 0.72, delay: 0.18 },
+        { position: [-0.55, 1.84, 0.05], size: 0.24, delay: 0.3 },
+      ],
+    },
   ];
 
-  focusStars = starLayout.map((item) => {
-    const material = createStarMaterial();
-    const star = new THREE.Mesh(geometry, material);
-    star.position.set(...item.position);
-    star.rotation.set(0.2, 0.05, -0.12);
-    star.userData.gaze = new THREE.Vector2(...item.gaze);
-    star.userData.basePosition = star.position.clone();
-    star.userData.delay = item.delay;
-    star.castShadow = false;
-    starRoot.add(star);
-    return star;
-  });
+  focusStars = starClusters.flatMap((cluster, clusterIndex) =>
+    cluster.stars.map((item) => {
+      const material = createStarMaterial();
+      const star = new THREE.Mesh(geometry, material);
+      star.position.set(...item.position);
+      star.rotation.set(0, 0, item.size > 1 ? -0.12 : 0.18);
+      star.scale.setScalar(item.size);
+      star.userData.gaze = new THREE.Vector2(...cluster.gaze);
+      star.userData.basePosition = star.position.clone();
+      star.userData.baseScale = item.size;
+      star.userData.delay = item.delay;
+      star.userData.cluster = clusterIndex;
+      star.castShadow = false;
+      starRoot.add(star);
+      return star;
+    }),
+  );
 });
 
 function createRobotMaterial(object) {
@@ -215,13 +245,13 @@ function createEyeMaterial() {
 
 function createStarMaterial() {
   return new THREE.MeshStandardMaterial({
-    color: '#d8d2c7',
-    emissive: '#6b5cff',
-    emissiveIntensity: 0.08,
-    roughness: 0.28,
-    metalness: 0.18,
+    color: '#ffd76b',
+    emissive: '#ffb21f',
+    emissiveIntensity: 0.18,
+    roughness: 0.36,
+    metalness: 0.05,
     transparent: true,
-    opacity: 0.55,
+    opacity: 0.62,
   });
 }
 
@@ -367,21 +397,21 @@ function updateFocusStars(seconds) {
     return new THREE.Vector2(Math.sin(seconds * 0.6) * 0.3, Math.sin(seconds * 0.5) * 0.25);
   }
 
-  const interval = 1.15;
-  const activeIndex = Math.floor(seconds / interval) % focusStars.length;
-  const activeStar = focusStars[activeIndex];
+  const interval = 1.2;
+  const clusterCount = Math.max(...focusStars.map((star) => star.userData.cluster)) + 1;
+  const activeCluster = Math.floor(seconds / interval) % clusterCount;
+  const activeStar = focusStars.find((star) => star.userData.cluster === activeCluster) || focusStars[0];
 
   focusStars.forEach((star, index) => {
-    const activeAmount = index === activeIndex ? 1 : 0;
-    const shimmer = Math.max(0, Math.sin((seconds + star.userData.delay) * 5.4)) * 0.18;
-    const targetOpacity = activeAmount ? 1 : 0.38 + shimmer;
-    const targetGlow = activeAmount ? 1.25 + Math.sin(seconds * 9) * 0.25 : 0.08 + shimmer * 0.4;
-    const targetScale = activeAmount ? 1.45 + Math.sin(seconds * 8.5) * 0.08 : 1;
+    const activeAmount = star.userData.cluster === activeCluster ? 1 : 0;
+    const shimmer = Math.max(0, Math.sin((seconds + star.userData.delay) * 7.2)) * 0.22;
+    const targetOpacity = activeAmount ? 1 : 0.42 + shimmer;
+    const targetGlow = activeAmount ? 1.55 + Math.sin(seconds * 10.5 + index) * 0.32 : 0.16 + shimmer * 0.6;
+    const targetScale = star.userData.baseScale * (activeAmount ? 1.18 + Math.sin(seconds * 9 + index) * 0.05 : 1);
 
     star.material.opacity += (targetOpacity - star.material.opacity) * 0.16;
     star.material.emissiveIntensity += (targetGlow - star.material.emissiveIntensity) * 0.16;
     star.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.16);
-    star.rotation.z += activeAmount ? 0.035 : 0.012;
     star.position.y = star.userData.basePosition.y + Math.sin(seconds * 2.1 + index) * 0.025;
   });
 
