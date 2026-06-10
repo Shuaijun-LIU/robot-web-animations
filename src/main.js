@@ -112,10 +112,7 @@ loader.load(modelUrl, (gltf) => {
   head = robotScene.getObjectByName('Cabeza');
   button = robotScene.getObjectByName('Button') || robotScene.getObjectByName('Botón');
   eyeSpheres = findEyeSpheres(robotScene);
-  eyeSpheres.forEach((eye) => {
-    eye.material = createEyeMaterial();
-    eye.scale.multiplyScalar(1.08);
-  });
+  replaceEyeSpheresWithDiscs(eyeSpheres);
 
   robotRoot.add(robotScene);
   document.body.classList.remove('loading');
@@ -170,10 +167,10 @@ function createRobotMaterial(object) {
 
 function createEyeMaterial() {
   const material = new THREE.MeshStandardMaterial({
-    color: '#ece8df',
-    emissive: '#000000',
-    emissiveIntensity: 0,
-    roughness: 0.88,
+    color: '#9fdfff',
+    emissive: '#4daef0',
+    emissiveIntensity: 0.28,
+    roughness: 0.96,
     metalness: 0,
   });
   material.userData.baseColor = material.color.clone();
@@ -268,6 +265,14 @@ function createFocusSparkles() {
         { position: [-0.55, 1.84, 0.05], size: 0.14, delay: 0.3 },
       ],
     },
+    {
+      gaze: [0.72, 0.62],
+      stars: [
+        { position: [2.18, 2.22, -0.18], size: 0.64, delay: 0.04 },
+        { position: [2.48, 2.54, -0.28], size: 0.22, delay: 0.22 },
+        { position: [1.92, 2.62, -0.12], size: 0.15, delay: 0.34 },
+      ],
+    },
   ];
 
   return starClusters.flatMap((cluster, clusterIndex) =>
@@ -286,6 +291,23 @@ function createFocusSparkles() {
       return sparkle;
     }),
   );
+}
+
+function replaceEyeSpheresWithDiscs(spheres) {
+  const discs = [];
+  const geometry = new THREE.CircleGeometry(12.8, 48);
+  spheres.forEach((sphere) => {
+    const disc = new THREE.Mesh(geometry, createEyeMaterial());
+    disc.name = `${sphere.name}_disc`;
+    disc.position.copy(sphere.position);
+    disc.position.z += 11.9;
+    disc.renderOrder = 2;
+    sphere.visible = false;
+    sphere.parent.add(disc);
+    clickableMeshes.push(disc);
+    discs.push(disc);
+  });
+  return discs;
 }
 
 function isEyeSphere(object) {
@@ -404,8 +426,7 @@ function updateFocusStars(seconds) {
     return new THREE.Vector2(Math.sin(seconds * 0.6) * 0.3, Math.sin(seconds * 0.5) * 0.25);
   }
 
-  const interval = 3.4;
-  const visibleDuration = 1.55;
+  const interval = 5.2;
   const cycle = Math.floor(seconds / interval);
   const localTime = seconds - cycle * interval;
   const clusterCount = Math.max(...focusStars.map((star) => star.userData.cluster)) + 1;
@@ -416,27 +437,29 @@ function updateFocusStars(seconds) {
     starState.cycle = cycle;
     starState.gaze.copy(activeStar.userData.gaze);
     focusStars.forEach((star) => {
-      star.material.opacity = 0;
-      star.visible = false;
+      star.visible = true;
     });
   }
 
-  const envelope = localTime < visibleDuration ? Math.sin((localTime / visibleDuration) * Math.PI) : 0;
+  const fadeIn = THREE.MathUtils.smoothstep(localTime, 0, 1.05);
+  const fadeOut = 1 - THREE.MathUtils.smoothstep(localTime, interval - 1.2, interval);
+  const activeEnvelope = fadeIn * fadeOut;
   focusStars.forEach((star, index) => {
     const isActive = star.userData.cluster === activeCluster;
-    const delayedEnvelope = isActive && localTime < visibleDuration
-      ? Math.max(0, Math.sin(((localTime - star.userData.delay) / visibleDuration) * Math.PI))
+    const delayedEnvelope = isActive
+      ? Math.max(0, Math.min(1, activeEnvelope - star.userData.delay * 0.22))
       : 0;
-    const opacity = Math.pow(delayedEnvelope, 1.2) * star.userData.opacityWeight;
-    const pulse = 1 + Math.sin(localTime * 6 + index) * 0.08 * envelope;
-    star.visible = opacity > 0.01;
-    star.material.opacity = opacity;
+    const dimShimmer = 0.065 + Math.max(0, Math.sin(seconds * 1.35 + index * 1.7)) * 0.065;
+    const targetOpacity = (isActive ? 0.18 + delayedEnvelope * 0.78 : dimShimmer) * star.userData.opacityWeight;
+    const pulse = isActive ? 1 + Math.sin(localTime * 2.4 + index) * 0.05 * delayedEnvelope : 0.92;
+    star.visible = true;
+    star.material.opacity += (targetOpacity - star.material.opacity) * 0.08;
     star.scale.setScalar(star.userData.baseScale * pulse);
     star.position.copy(star.userData.basePosition);
-    star.position.y += Math.sin(seconds * 1.2 + index) * 0.015;
+    star.position.y += Math.sin(seconds * 0.9 + index) * 0.012;
   });
 
-  return starState.gaze.clone().multiplyScalar(Math.min(1, envelope * 1.25));
+  return starState.gaze;
 }
 
 renderer.setAnimationLoop(animate);
