@@ -95,6 +95,7 @@ const armOriginals = new Map();
 let robotScene;
 let armScene;
 let head;
+let body;
 let button;
 let eyeSpheres = [];
 let focusStars = [];
@@ -135,11 +136,14 @@ loader.load(modelUrl, (gltf) => {
   });
 
   head = robotScene.getObjectByName('Cabeza');
+  body = robotScene.getObjectByName('Cuerpo');
   button = robotScene.getObjectByName('Button') || robotScene.getObjectByName('Botón');
   labelButton(button);
   eyeSpheres = findEyeSpheres(robotScene);
   replaceEyeSpheresWithDiscs(eyeSpheres);
-  robotScene.userData.baseY = robotScene.position.y;
+  [head, body].forEach((part) => {
+    if (part) part.userData.baseY = part.position.y;
+  });
 
   robotRoot.add(robotScene);
   document.body.classList.remove('loading');
@@ -149,6 +153,10 @@ loader.load(armModelUrl, (gltf) => {
   armScene = gltf.scene;
   normalizeModelToGround(armScene, 1.82, -0.12);
   armScene.traverse((object) => {
+    if (isArmAccessory(object)) {
+      object.visible = false;
+      return;
+    }
     if (object.isMesh) {
       object.castShadow = true;
       object.receiveShadow = true;
@@ -345,7 +353,7 @@ function createActionSprites() {
     opacity: 0,
     depthWrite: false,
   }));
-  bubble.position.set(0.74, 1.45, 1.12);
+  bubble.position.set(0.74, 1.22, 1.12);
   bubble.scale.set(1.1, 0.46, 1);
   bubble.visible = false;
   actionRoot.add(bubble);
@@ -396,23 +404,23 @@ function createBubbleTexture() {
   context.stroke();
 
   context.beginPath();
-  context.moveTo(184, 236);
-  context.lineTo(124, 296);
-  context.lineTo(270, 238);
+  context.moveTo(184, 248);
+  context.lineTo(124, 312);
+  context.lineTo(270, 250);
   context.closePath();
   context.fill();
   context.stroke();
 
-  context.font = '800 54px Inter, Arial, sans-serif';
+  context.font = '800 56px Inter, Arial, sans-serif';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.fillStyle = '#f8feff';
   context.shadowColor = 'rgba(79, 199, 255, 0.62)';
   context.shadowBlur = 18;
-  context.fillText('Welcome to NEBULIS', canvas.width / 2, 124);
-  context.font = '700 42px Inter, Arial, sans-serif';
+  context.fillText('Welcome to', canvas.width / 2, 116);
+  context.font = '800 52px Inter, Arial, sans-serif';
   context.fillStyle = '#ffe79a';
-  context.fillText('Lab', canvas.width / 2, 182);
+  context.fillText('NEBULIS Lab', canvas.width / 2, 184);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -486,7 +494,7 @@ function labelButton(buttonObject) {
     transparent: true,
     depthWrite: false,
   });
-  const label = new THREE.Mesh(new THREE.PlaneGeometry(45, 16), material);
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(47, 16.5), material);
   label.name = 'Nebulis_Button_Label';
   label.position.set(-0.15, -1.2, 0.85);
   label.renderOrder = 3;
@@ -495,8 +503,8 @@ function labelButton(buttonObject) {
 
 function createButtonLabelTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 384;
+  canvas.width = 2048;
+  canvas.height = 512;
   const context = canvas.getContext('2d');
 
   const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
@@ -505,16 +513,16 @@ function createButtonLabelTexture() {
   gradient.addColorStop(1, '#fff1a6');
 
   context.clearRect(0, 0, canvas.width, canvas.height);
-  context.font = '850 136px Inter, Arial, sans-serif';
+  context.font = '850 320px Inter, Arial, sans-serif';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.shadowColor = 'rgba(0, 12, 35, 0.85)';
   context.shadowBlur = 18;
-  context.lineWidth = 10;
+  context.lineWidth = 18;
   context.strokeStyle = 'rgba(7, 11, 28, 0.95)';
-  context.strokeText('NEBULIS Lab', canvas.width / 2, canvas.height / 2);
+  context.strokeText('NEBULIS Lab', canvas.width / 2, canvas.height / 2 + 10);
   context.fillStyle = gradient;
-  context.fillText('NEBULIS Lab', canvas.width / 2, canvas.height / 2);
+  context.fillText('NEBULIS Lab', canvas.width / 2, canvas.height / 2 + 10);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -628,6 +636,11 @@ function isPedestalPart(object) {
 function isOriginalSquarePlatform(object) {
   const parentName = object.parent?.name;
   return object.name === 'Plane' && (parentName === 'Scene 1' || parentName === 'Scene_1');
+}
+
+function isArmAccessory(object) {
+  const lineage = getLineage(object).join(' ');
+  return /UI|Target|Floor|Camera|Directional_Light|Default_Ambient_Light/i.test(lineage);
 }
 
 function findEyeSpheres(root) {
@@ -757,7 +770,7 @@ function updateRobotActions(seconds) {
     const actions = ['jump', 'heart', 'bubble'];
     robotAction.type = actions[Math.floor(Math.random() * actions.length)];
     robotAction.start = seconds;
-    robotAction.duration = robotAction.type === 'jump' ? 1.15 : robotAction.type === 'heart' ? 2.6 : 3.4;
+    robotAction.duration = robotAction.type === 'jump' ? 1.5 : robotAction.type === 'heart' ? 4.0 : 5.0;
   }
 
   const elapsed = robotAction.type ? seconds - robotAction.start : 0;
@@ -773,7 +786,8 @@ function updateRobotActions(seconds) {
   }
 
   const envelope = Math.sin(progress * Math.PI);
-  actionRoot.position.set(0, robotScene.position.y - robotScene.userData.baseY, 0);
+  const bodyJump = body ? body.position.y - body.userData.baseY : 0;
+  actionRoot.position.set(0, bodyJump, 0);
 
   if (robotAction.type === 'jump') {
     setSpriteOpacity(actionSprites.heart, 0);
@@ -784,14 +798,14 @@ function updateRobotActions(seconds) {
   if (robotAction.type === 'heart') {
     setSpriteOpacity(actionSprites.bubble, 0);
     setSpriteOpacity(actionSprites.heart, Math.min(1, envelope * 1.4));
-    actionSprites.heart.position.y = 1.58 + envelope * 0.24;
+    actionSprites.heart.position.y = 1.36 + envelope * 0.18;
     actionSprites.heart.scale.setScalar(0.32 + envelope * 0.16);
     return 0;
   }
 
   setSpriteOpacity(actionSprites.heart, 0);
   setSpriteOpacity(actionSprites.bubble, Math.min(1, envelope * 1.35));
-  actionSprites.bubble.position.y = 1.42 + envelope * 0.08;
+  actionSprites.bubble.position.y = 1.22 + envelope * 0.05;
   actionSprites.bubble.scale.set(1.08 + envelope * 0.06, 0.45 + envelope * 0.03, 1);
   return 0;
 }
@@ -817,9 +831,9 @@ function animate(time) {
     robotRoot.rotation.y += (idleX - robotRoot.rotation.y) * 0.045;
     robotRoot.position.y = Math.sin(seconds * 0.72) * 0.055 + (active ? Math.sin(seconds * 2.8) * 0.024 : 0);
     robotRoot.scale.setScalar(1 + (hovered ? 0.025 : 0) + (active ? 0.035 : 0));
-    if (robotScene) {
-      robotScene.position.y = robotScene.userData.baseY + jumpOffset;
-    }
+    [head, body].forEach((part) => {
+      if (part) part.position.y = part.userData.baseY + jumpOffset;
+    });
 
     if (head) {
       head.rotation.y += (focusX * 0.56 - head.rotation.y) * 0.1;
