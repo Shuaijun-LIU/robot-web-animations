@@ -95,7 +95,6 @@ const armOriginals = new Map();
 let robotScene;
 let armScene;
 let head;
-let body;
 let button;
 let eyeSpheres = [];
 let focusStars = [];
@@ -136,15 +135,11 @@ loader.load(modelUrl, (gltf) => {
   });
 
   head = robotScene.getObjectByName('Cabeza');
-  body = robotScene.getObjectByName('Cuerpo');
   button = robotScene.getObjectByName('Button') || robotScene.getObjectByName('Botón');
   labelButton(button);
   eyeSpheres = findEyeSpheres(robotScene);
   replaceEyeSpheresWithDiscs(eyeSpheres);
   robotScene.userData.baseY = robotScene.position.y;
-  [head, body].forEach((part) => {
-    if (part) part.userData.baseY = part.position.y;
-  });
 
   robotRoot.add(robotScene);
   document.body.classList.remove('loading');
@@ -153,6 +148,7 @@ loader.load(modelUrl, (gltf) => {
 loader.load(armModelUrl, (gltf) => {
   armScene = gltf.scene;
   normalizeModelToGround(armScene, 1.82, -0.12);
+  removeArmAccessories(armScene);
   armScene.traverse((object) => {
     if (object.isMesh) {
       object.castShadow = true;
@@ -491,7 +487,7 @@ function labelButton(buttonObject) {
     transparent: true,
     depthWrite: false,
   });
-  const label = new THREE.Mesh(new THREE.PlaneGeometry(82, 26), material);
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(98, 30), material);
   label.name = 'Nebulis_Button_Label';
   label.position.set(-0.15, -1.2, 0.85);
   label.renderOrder = 3;
@@ -500,8 +496,8 @@ function labelButton(buttonObject) {
 
 function createButtonLabelTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 3200;
-  canvas.height = 860;
+  canvas.width = 3800;
+  canvas.height = 1024;
   const context = canvas.getContext('2d');
 
   const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
@@ -510,12 +506,12 @@ function createButtonLabelTexture() {
   gradient.addColorStop(1, '#fff1a6');
 
   context.clearRect(0, 0, canvas.width, canvas.height);
-  context.font = '850 360px Inter, Arial, sans-serif';
+  context.font = '850 430px Inter, Arial, sans-serif';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.shadowColor = 'rgba(0, 12, 35, 0.85)';
   context.shadowBlur = 18;
-  context.lineWidth = 22;
+  context.lineWidth = 28;
   context.strokeStyle = 'rgba(7, 11, 28, 0.95)';
   context.strokeText('NEBULIS Lab', canvas.width / 2, canvas.height / 2 + 10);
   context.fillStyle = gradient;
@@ -701,6 +697,27 @@ function getObjectByNames(root, names) {
   return null;
 }
 
+function removeArmAccessories(root) {
+  const removableNames = new Set([
+    'UI',
+    'Target',
+    'Floor',
+    'Camera',
+    'Directional_Light',
+    'Directional_Light_2',
+    'Default_Ambient_Light',
+  ]);
+  const removable = [];
+  root.traverse((object) => {
+    if (removableNames.has(object.name) || object.isCamera || object.isLight) {
+      removable.push(object);
+    }
+  });
+  removable.forEach((object) => {
+    object.parent?.remove(object);
+  });
+}
+
 function updateHover() {
   if (!robotScene) return;
   raycaster.setFromCamera(pointer, camera);
@@ -731,19 +748,6 @@ function rotateToward(joint, axis, value, amount = 0.1) {
   joint.rotation[axis] += (base + value - joint.rotation[axis]) * amount;
 }
 
-function moveRobotPartsForJump(offset) {
-  [head, body].forEach((part) => {
-    if (part && Number.isFinite(part.userData.baseY)) {
-      part.position.y = part.userData.baseY + offset;
-    }
-  });
-}
-
-function jumpOffsetForRobotParts() {
-  if (!body || !Number.isFinite(body.userData.baseY)) return 0;
-  return body.position.y - body.userData.baseY;
-}
-
 function updateArm(seconds) {
   if (!armScene) return;
   const sweep = Math.sin(seconds * 0.45);
@@ -772,10 +776,10 @@ function updateRobotActions(seconds) {
   if (!robotScene) return 0;
 
   if (!robotAction.type && seconds >= robotAction.nextAt) {
-    const actions = ['jump', 'heart', 'bubble'];
+    const actions = ['heart', 'bubble'];
     robotAction.type = actions[Math.floor(Math.random() * actions.length)];
     robotAction.start = seconds;
-    robotAction.duration = robotAction.type === 'jump' ? 1.5 : robotAction.type === 'heart' ? 4.0 : 5.0;
+    robotAction.duration = robotAction.type === 'heart' ? 4.0 : 5.0;
   }
 
   const elapsed = robotAction.type ? seconds - robotAction.start : 0;
@@ -791,13 +795,7 @@ function updateRobotActions(seconds) {
   }
 
   const envelope = Math.sin(progress * Math.PI);
-  actionRoot.position.set(0, jumpOffsetForRobotParts(), 0);
-
-  if (robotAction.type === 'jump') {
-    setSpriteOpacity(actionSprites.heart, 0);
-    setSpriteOpacity(actionSprites.bubble, 0);
-    return envelope * 0.28;
-  }
+  actionRoot.position.set(0, robotScene.position.y - robotScene.userData.baseY, 0);
 
   if (robotAction.type === 'heart') {
     setSpriteOpacity(actionSprites.bubble, 0);
@@ -835,7 +833,9 @@ function animate(time) {
     robotRoot.rotation.y += (idleX - robotRoot.rotation.y) * 0.045;
     robotRoot.position.y = Math.sin(seconds * 0.72) * 0.055 + (active ? Math.sin(seconds * 2.8) * 0.024 : 0);
     robotRoot.scale.setScalar(1 + (hovered ? 0.025 : 0) + (active ? 0.035 : 0));
-    moveRobotPartsForJump(jumpOffset);
+    if (robotScene) {
+      robotScene.position.y = robotScene.userData.baseY + jumpOffset;
+    }
 
     if (head) {
       head.rotation.y += (focusX * 0.56 - head.rotation.y) * 0.1;
