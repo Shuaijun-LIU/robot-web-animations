@@ -411,16 +411,16 @@ function createBubbleTexture() {
   context.fill();
   context.stroke();
 
-  context.font = '800 54px Inter, Arial, sans-serif';
+  context.font = '800 56px Inter, Arial, sans-serif';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.fillStyle = '#f8feff';
   context.shadowColor = 'rgba(79, 199, 255, 0.62)';
   context.shadowBlur = 18;
-  context.fillText('Welcome to NEBULIS', canvas.width / 2, 124);
-  context.font = '700 42px Inter, Arial, sans-serif';
+  context.fillText('Welcome to', canvas.width / 2, 116);
+  context.font = '800 52px Inter, Arial, sans-serif';
   context.fillStyle = '#ffe79a';
-  context.fillText('Lab', canvas.width / 2, 182);
+  context.fillText('NEBULIS Lab', canvas.width / 2, 184);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
