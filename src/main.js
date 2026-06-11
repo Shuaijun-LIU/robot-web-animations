@@ -513,7 +513,7 @@ function createButtonLabelTexture() {
   gradient.addColorStop(1, '#fff1a6');
 
   context.clearRect(0, 0, canvas.width, canvas.height);
-  context.font = '850 272px Inter, Arial, sans-serif';
+  context.font = '850 300px Inter, Arial, sans-serif';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.shadowColor = 'rgba(0, 12, 35, 0.85)';
@@ -521,14 +521,9 @@ function createButtonLabelTexture() {
   context.lineWidth = 16;
   context.strokeStyle = 'rgba(7, 11, 28, 0.95)';
   const label = 'NEBULIS Lab';
-  const scaleX = Math.min(1, 940 / context.measureText(label).width);
-  context.save();
-  context.translate(canvas.width / 2, canvas.height / 2 + 8);
-  context.scale(scaleX, 1);
-  context.strokeText(label, 0, 0);
+  context.strokeText(label, canvas.width / 2, canvas.height / 2 + 8);
   context.fillStyle = gradient;
-  context.fillText(label, 0, 0);
-  context.restore();
+  context.fillText(label, canvas.width / 2, canvas.height / 2 + 8);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
