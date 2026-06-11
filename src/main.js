@@ -95,6 +95,7 @@ const armOriginals = new Map();
 let robotScene;
 let armScene;
 let head;
+let body;
 let button;
 let eyeSpheres = [];
 let focusStars = [];
@@ -135,11 +136,14 @@ loader.load(modelUrl, (gltf) => {
   });
 
   head = robotScene.getObjectByName('Cabeza');
+  body = robotScene.getObjectByName('Cuerpo');
   button = robotScene.getObjectByName('Button') || robotScene.getObjectByName('Botón');
   labelButton(button);
   eyeSpheres = findEyeSpheres(robotScene);
   replaceEyeSpheresWithDiscs(eyeSpheres);
-  robotScene.userData.baseY = robotScene.position.y;
+  [head, body].forEach((part) => {
+    if (part) part.userData.baseY = part.position.y;
+  });
 
   robotRoot.add(robotScene);
   document.body.classList.remove('loading');
@@ -788,7 +792,8 @@ function updateRobotActions(seconds) {
   }
 
   const envelope = Math.sin(progress * Math.PI);
-  actionRoot.position.set(0, robotScene.position.y - robotScene.userData.baseY, 0);
+  const bodyJump = body ? body.position.y - body.userData.baseY : 0;
+  actionRoot.position.set(0, bodyJump, 0);
 
   if (robotAction.type === 'jump') {
     setSpriteOpacity(actionSprites.heart, 0);
@@ -832,9 +837,9 @@ function animate(time) {
     robotRoot.rotation.y += (idleX - robotRoot.rotation.y) * 0.045;
     robotRoot.position.y = Math.sin(seconds * 0.72) * 0.055 + (active ? Math.sin(seconds * 2.8) * 0.024 : 0);
     robotRoot.scale.setScalar(1 + (hovered ? 0.025 : 0) + (active ? 0.035 : 0));
-    if (robotScene) {
-      robotScene.position.y = robotScene.userData.baseY + jumpOffset;
-    }
+    [head, body].forEach((part) => {
+      if (part) part.position.y = part.userData.baseY + jumpOffset;
+    });
 
     if (head) {
       head.rotation.y += (focusX * 0.56 - head.rotation.y) * 0.1;
