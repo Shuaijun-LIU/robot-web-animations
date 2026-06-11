@@ -126,9 +126,12 @@ loader.load(modelUrl, (gltf) => {
     if (object.isMesh) {
       object.castShadow = true;
       object.receiveShadow = true;
-      clickableMeshes.push(object);
       if (isOriginalSquarePlatform(object)) {
         object.visible = false;
+        return;
+      }
+      if (!isEyeSphere(object)) {
+        clickableMeshes.push(object);
       }
       if (object.material) {
         object.material = createRobotMaterial(object);
@@ -724,8 +727,17 @@ function updateHover() {
   if (!robotScene) return;
   raycaster.setFromCamera(pointer, camera);
   const hits = raycaster.intersectObjects(clickableMeshes, true);
-  hovered = hits.length > 0;
+  hovered = hits.some((hit) => isEffectivelyVisible(hit.object));
   document.body.style.cursor = hovered ? 'pointer' : 'default';
+}
+
+function isEffectivelyVisible(object) {
+  let current = object;
+  while (current) {
+    if (!current.visible) return false;
+    current = current.parent;
+  }
+  return true;
 }
 
 function tintObject(object, amount) {
