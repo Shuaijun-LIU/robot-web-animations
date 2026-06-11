@@ -96,6 +96,7 @@ let robotScene;
 let armScene;
 let head;
 let body;
+let robotJumpRoot;
 let button;
 let eyeSpheres = [];
 let focusStars = [];
@@ -141,9 +142,7 @@ loader.load(modelUrl, (gltf) => {
   labelButton(button);
   eyeSpheres = findEyeSpheres(robotScene);
   replaceEyeSpheresWithDiscs(eyeSpheres);
-  [head, body].forEach((part) => {
-    if (part) part.userData.baseY = part.position.y;
-  });
+  robotJumpRoot = createRobotJumpRoot(robotScene, [body, head]);
 
   robotRoot.add(robotScene);
   document.body.classList.remove('loading');
@@ -663,6 +662,18 @@ function getLineage(object) {
   return names;
 }
 
+function createRobotJumpRoot(root, parts) {
+  const sceneRoot = root.getObjectByName('Scene_1') || root.getObjectByName('Scene 1') || root;
+  const jumpRoot = new THREE.Group();
+  jumpRoot.name = 'Robot_Jump_Root';
+  sceneRoot.add(jumpRoot);
+  root.updateMatrixWorld(true);
+  parts.forEach((part) => {
+    if (part) jumpRoot.attach(part);
+  });
+  return jumpRoot;
+}
+
 window.addEventListener('pointermove', (event) => {
   pointerTarget.x = (event.clientX / window.innerWidth) * 2 - 1;
   pointerTarget.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -786,8 +797,6 @@ function updateRobotActions(seconds) {
   }
 
   const envelope = Math.sin(progress * Math.PI);
-  const bodyJump = body ? body.position.y - body.userData.baseY : 0;
-  actionRoot.position.set(0, bodyJump, 0);
 
   if (robotAction.type === 'jump') {
     setSpriteOpacity(actionSprites.heart, 0);
@@ -831,9 +840,10 @@ function animate(time) {
     robotRoot.rotation.y += (idleX - robotRoot.rotation.y) * 0.045;
     robotRoot.position.y = Math.sin(seconds * 0.72) * 0.055 + (active ? Math.sin(seconds * 2.8) * 0.024 : 0);
     robotRoot.scale.setScalar(1 + (hovered ? 0.025 : 0) + (active ? 0.035 : 0));
-    [head, body].forEach((part) => {
-      if (part) part.position.y = part.userData.baseY + jumpOffset;
-    });
+    if (robotJumpRoot) {
+      robotJumpRoot.position.y = jumpOffset;
+    }
+    actionRoot.position.y = jumpOffset;
 
     if (head) {
       head.rotation.y += (focusX * 0.56 - head.rotation.y) * 0.1;
