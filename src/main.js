@@ -403,16 +403,16 @@ function createBubbleTexture() {
   context.fill();
   context.stroke();
 
-  context.font = '800 54px Inter, Arial, sans-serif';
+  context.font = '800 56px Inter, Arial, sans-serif';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.fillStyle = '#f8feff';
   context.shadowColor = 'rgba(79, 199, 255, 0.62)';
   context.shadowBlur = 18;
-  context.fillText('Welcome to NEBULIS', canvas.width / 2, 124);
-  context.font = '700 42px Inter, Arial, sans-serif';
+  context.fillText('Welcome to', canvas.width / 2, 116);
+  context.font = '800 52px Inter, Arial, sans-serif';
   context.fillStyle = '#ffe79a';
-  context.fillText('Lab', canvas.width / 2, 182);
+  context.fillText('NEBULIS Lab', canvas.width / 2, 184);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -486,7 +486,7 @@ function labelButton(buttonObject) {
     transparent: true,
     depthWrite: false,
   });
-  const label = new THREE.Mesh(new THREE.PlaneGeometry(45, 16), material);
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(68, 22), material);
   label.name = 'Nebulis_Button_Label';
   label.position.set(-0.15, -1.2, 0.85);
   label.renderOrder = 3;
@@ -495,8 +495,8 @@ function labelButton(buttonObject) {
 
 function createButtonLabelTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 384;
+  canvas.width = 2600;
+  canvas.height = 720;
   const context = canvas.getContext('2d');
 
   const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
@@ -505,16 +505,16 @@ function createButtonLabelTexture() {
   gradient.addColorStop(1, '#fff1a6');
 
   context.clearRect(0, 0, canvas.width, canvas.height);
-  context.font = '850 136px Inter, Arial, sans-serif';
+  context.font = '850 300px Inter, Arial, sans-serif';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.shadowColor = 'rgba(0, 12, 35, 0.85)';
   context.shadowBlur = 18;
-  context.lineWidth = 10;
+  context.lineWidth = 18;
   context.strokeStyle = 'rgba(7, 11, 28, 0.95)';
-  context.strokeText('NEBULIS Lab', canvas.width / 2, canvas.height / 2);
+  context.strokeText('NEBULIS Lab', canvas.width / 2, canvas.height / 2 + 10);
   context.fillStyle = gradient;
-  context.fillText('NEBULIS Lab', canvas.width / 2, canvas.height / 2);
+  context.fillText('NEBULIS Lab', canvas.width / 2, canvas.height / 2 + 10);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
