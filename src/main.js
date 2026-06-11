@@ -149,6 +149,10 @@ loader.load(armModelUrl, (gltf) => {
   armScene = gltf.scene;
   normalizeModelToGround(armScene, 1.82, -0.12);
   armScene.traverse((object) => {
+    if (isArmAccessory(object)) {
+      object.visible = false;
+      return;
+    }
     if (object.isMesh) {
       object.castShadow = true;
       object.receiveShadow = true;
@@ -345,7 +349,7 @@ function createActionSprites() {
     opacity: 0,
     depthWrite: false,
   }));
-  bubble.position.set(0.74, 1.45, 1.12);
+  bubble.position.set(0.74, 1.2, 1.12);
   bubble.scale.set(1.1, 0.46, 1);
   bubble.visible = false;
   actionRoot.add(bubble);
@@ -396,9 +400,9 @@ function createBubbleTexture() {
   context.stroke();
 
   context.beginPath();
-  context.moveTo(184, 236);
-  context.lineTo(124, 296);
-  context.lineTo(270, 238);
+  context.moveTo(184, 248);
+  context.lineTo(124, 312);
+  context.lineTo(270, 250);
   context.closePath();
   context.fill();
   context.stroke();
@@ -505,16 +509,22 @@ function createButtonLabelTexture() {
   gradient.addColorStop(1, '#fff1a6');
 
   context.clearRect(0, 0, canvas.width, canvas.height);
-  context.font = '850 136px Inter, Arial, sans-serif';
+  context.font = '850 272px Inter, Arial, sans-serif';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.shadowColor = 'rgba(0, 12, 35, 0.85)';
   context.shadowBlur = 18;
-  context.lineWidth = 10;
+  context.lineWidth = 16;
   context.strokeStyle = 'rgba(7, 11, 28, 0.95)';
-  context.strokeText('NEBULIS Lab', canvas.width / 2, canvas.height / 2);
+  const label = 'NEBULIS Lab';
+  const scaleX = Math.min(1, 940 / context.measureText(label).width);
+  context.save();
+  context.translate(canvas.width / 2, canvas.height / 2 + 8);
+  context.scale(scaleX, 1);
+  context.strokeText(label, 0, 0);
   context.fillStyle = gradient;
-  context.fillText('NEBULIS Lab', canvas.width / 2, canvas.height / 2);
+  context.fillText(label, 0, 0);
+  context.restore();
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -628,6 +638,11 @@ function isPedestalPart(object) {
 function isOriginalSquarePlatform(object) {
   const parentName = object.parent?.name;
   return object.name === 'Plane' && (parentName === 'Scene 1' || parentName === 'Scene_1');
+}
+
+function isArmAccessory(object) {
+  const lineage = getLineage(object).join(' ');
+  return /UI|Target|Floor|Camera|Directional_Light|Default_Ambient_Light/i.test(lineage);
 }
 
 function findEyeSpheres(root) {
@@ -757,7 +772,7 @@ function updateRobotActions(seconds) {
     const actions = ['jump', 'heart', 'bubble'];
     robotAction.type = actions[Math.floor(Math.random() * actions.length)];
     robotAction.start = seconds;
-    robotAction.duration = robotAction.type === 'jump' ? 1.15 : robotAction.type === 'heart' ? 2.6 : 3.4;
+    robotAction.duration = robotAction.type === 'jump' ? 1.6 : robotAction.type === 'heart' ? 4.3 : 5.2;
   }
 
   const elapsed = robotAction.type ? seconds - robotAction.start : 0;
@@ -784,14 +799,14 @@ function updateRobotActions(seconds) {
   if (robotAction.type === 'heart') {
     setSpriteOpacity(actionSprites.bubble, 0);
     setSpriteOpacity(actionSprites.heart, Math.min(1, envelope * 1.4));
-    actionSprites.heart.position.y = 1.58 + envelope * 0.24;
+    actionSprites.heart.position.y = 1.34 + envelope * 0.18;
     actionSprites.heart.scale.setScalar(0.32 + envelope * 0.16);
     return 0;
   }
 
   setSpriteOpacity(actionSprites.heart, 0);
   setSpriteOpacity(actionSprites.bubble, Math.min(1, envelope * 1.35));
-  actionSprites.bubble.position.y = 1.42 + envelope * 0.08;
+  actionSprites.bubble.position.y = 1.2 + envelope * 0.05;
   actionSprites.bubble.scale.set(1.08 + envelope * 0.06, 0.45 + envelope * 0.03, 1);
   return 0;
 }
