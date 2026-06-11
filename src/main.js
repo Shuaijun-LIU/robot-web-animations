@@ -229,30 +229,25 @@ function createArmMaterial(object) {
   material.roughness = 0.44;
   material.metalness = 0.38;
 
-  if (/Target/i.test(lineage)) {
-    material.color = new THREE.Color('#ffe071');
-    material.emissive = new THREE.Color('#5a3a00');
-    material.emissiveIntensity = 0.32;
-    material.metalness = 0.08;
-  } else if (/Base Y Rotation|Base_Y_Rotation|Base|Ellipse|Cylinder 2|Sphere Clones/i.test(lineage)) {
-    material.color = new THREE.Color('#27313f');
-    material.emissive = new THREE.Color('#070a14');
-    material.emissiveIntensity = 0.08;
-    material.metalness = 0.62;
-    material.roughness = 0.32;
+  if (/Base Y Rotation|Base_Y_Rotation|Base|Ellipse|Cylinder 2|Sphere Clones/i.test(lineage)) {
+    material.color = new THREE.Color('#c8c7bd');
+    material.emissive = new THREE.Color('#181723');
+    material.emissiveIntensity = 0.05;
+    material.metalness = 0.34;
+    material.roughness = 0.46;
   } else if (/1 Hand X rotation|1_Hand_X_rotation|2 Hand X Rotation|2_Hand_X_Rotation|3 Hand X Rotate|3_Hand_X_Rotate|Grab|Star|Rectangle|Triangle/i.test(lineage)) {
-    material.color = new THREE.Color('#45d4c4');
-    material.emissive = new THREE.Color('#073534');
-    material.emissiveIntensity = 0.14;
-    material.metalness = 0.46;
-    material.roughness = 0.36;
+    material.color = new THREE.Color('#e4dfd3');
+    material.emissive = new THREE.Color('#15131f');
+    material.emissiveIntensity = 0.06;
+    material.metalness = 0.26;
+    material.roughness = 0.5;
   } else if (/UI|Text|Shape/i.test(lineage)) {
     material.color = new THREE.Color('#d8f8ff');
     material.emissive = new THREE.Color('#12323a');
     material.emissiveIntensity = 0.18;
     material.metalness = 0.1;
   } else {
-    material.color = new THREE.Color('#98a6ad');
+    material.color = new THREE.Color('#b9bab3');
   }
 
   material.userData.baseColor = material.color.clone();
@@ -487,7 +482,7 @@ function labelButton(buttonObject) {
     transparent: true,
     depthWrite: false,
   });
-  const label = new THREE.Mesh(new THREE.PlaneGeometry(98, 30), material);
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(140, 32), material);
   label.name = 'Nebulis_Button_Label';
   label.position.set(-0.15, -1.2, 0.85);
   label.renderOrder = 3;
@@ -496,7 +491,7 @@ function labelButton(buttonObject) {
 
 function createButtonLabelTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 3800;
+  canvas.width = 5200;
   canvas.height = 1024;
   const context = canvas.getContext('2d');
 
@@ -513,9 +508,9 @@ function createButtonLabelTexture() {
   context.shadowBlur = 18;
   context.lineWidth = 28;
   context.strokeStyle = 'rgba(7, 11, 28, 0.95)';
-  context.strokeText('NEBULIS Lab', canvas.width / 2, canvas.height / 2 + 10);
+  context.strokeText('@ Nebulis-Lab.com', canvas.width / 2, canvas.height / 2 + 10);
   context.fillStyle = gradient;
-  context.fillText('NEBULIS Lab', canvas.width / 2, canvas.height / 2 + 10);
+  context.fillText('@ Nebulis-Lab.com', canvas.width / 2, canvas.height / 2 + 10);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
