@@ -117,6 +117,7 @@ loader.load(modelUrl, (gltf) => {
 
   head = robotScene.getObjectByName('Cabeza');
   button = robotScene.getObjectByName('Button') || robotScene.getObjectByName('Botón');
+  labelButton(button);
   eyeSpheres = findEyeSpheres(robotScene);
   replaceEyeSpheresWithDiscs(eyeSpheres);
 
@@ -241,7 +242,7 @@ function createSparkleMaterial() {
 
 function createCircularPlatform() {
   const group = new THREE.Group();
-  group.position.y = -1.09;
+  group.position.y = -0.22;
 
   const topMaterial = new THREE.MeshStandardMaterial({
     color: '#201c36',
@@ -276,6 +277,55 @@ function createCircularPlatform() {
   group.add(rim);
 
   return group;
+}
+
+function labelButton(buttonObject) {
+  if (!buttonObject) return;
+  const originalText = buttonObject.getObjectByName('Text');
+  if (originalText) {
+    originalText.visible = false;
+  }
+
+  const texture = createButtonLabelTexture();
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+  });
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(44, 15), material);
+  label.name = 'Nebulis_Button_Label';
+  label.position.set(-0.15, -1.2, 0.85);
+  label.renderOrder = 3;
+  buttonObject.add(label);
+}
+
+function createButtonLabelTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 384;
+  const context = canvas.getContext('2d');
+
+  const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
+  gradient.addColorStop(0, '#e8fbff');
+  gradient.addColorStop(0.45, '#79e6ff');
+  gradient.addColorStop(1, '#fff1a6');
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.font = '800 116px Inter, Arial, sans-serif';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.shadowColor = 'rgba(0, 12, 35, 0.85)';
+  context.shadowBlur = 18;
+  context.lineWidth = 10;
+  context.strokeStyle = 'rgba(7, 11, 28, 0.95)';
+  context.strokeText('NEBULIS Lab', canvas.width / 2, canvas.height / 2);
+  context.fillStyle = gradient;
+  context.fillText('NEBULIS Lab', canvas.width / 2, canvas.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
+  return texture;
 }
 
 function createFocusSparkles() {
@@ -467,7 +517,7 @@ function animate(time) {
     const idleX = focusX * 0.18 + Math.sin(seconds * 0.55) * 0.025;
 
     robotRoot.rotation.y += (idleX - robotRoot.rotation.y) * 0.045;
-    robotRoot.position.y = Math.sin(seconds * 1.35) * 0.035 + (active ? Math.sin(seconds * 5.2) * 0.018 : 0);
+    robotRoot.position.y = Math.sin(seconds * 0.72) * 0.055 + (active ? Math.sin(seconds * 2.8) * 0.024 : 0);
     robotRoot.scale.setScalar(1 + (hovered ? 0.025 : 0) + (active ? 0.035 : 0));
 
     if (head) {
