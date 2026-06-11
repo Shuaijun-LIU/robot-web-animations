@@ -292,7 +292,7 @@ function labelButton(buttonObject) {
     transparent: true,
     depthWrite: false,
   });
-  const label = new THREE.Mesh(new THREE.PlaneGeometry(44, 15), material);
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(45, 16), material);
   label.name = 'Nebulis_Button_Label';
   label.position.set(-0.15, -1.2, 0.85);
   label.renderOrder = 3;
@@ -311,7 +311,7 @@ function createButtonLabelTexture() {
   gradient.addColorStop(1, '#fff1a6');
 
   context.clearRect(0, 0, canvas.width, canvas.height);
-  context.font = '800 116px Inter, Arial, sans-serif';
+  context.font = '850 136px Inter, Arial, sans-serif';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.shadowColor = 'rgba(0, 12, 35, 0.85)';
