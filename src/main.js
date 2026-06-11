@@ -95,6 +95,7 @@ const armOriginals = new Map();
 let robotScene;
 let armScene;
 let head;
+let body;
 let button;
 let eyeSpheres = [];
 let focusStars = [];
@@ -135,11 +136,15 @@ loader.load(modelUrl, (gltf) => {
   });
 
   head = robotScene.getObjectByName('Cabeza');
+  body = robotScene.getObjectByName('Cuerpo');
   button = robotScene.getObjectByName('Button') || robotScene.getObjectByName('Botón');
   labelButton(button);
   eyeSpheres = findEyeSpheres(robotScene);
   replaceEyeSpheresWithDiscs(eyeSpheres);
   robotScene.userData.baseY = robotScene.position.y;
+  [head, body].forEach((part) => {
+    if (part) part.userData.baseY = part.position.y;
+  });
 
   robotRoot.add(robotScene);
   document.body.classList.remove('loading');
@@ -149,10 +154,6 @@ loader.load(armModelUrl, (gltf) => {
   armScene = gltf.scene;
   normalizeModelToGround(armScene, 1.82, -0.12);
   armScene.traverse((object) => {
-    if (isArmAccessory(object)) {
-      object.visible = false;
-      return;
-    }
     if (object.isMesh) {
       object.castShadow = true;
       object.receiveShadow = true;
@@ -634,11 +635,6 @@ function isOriginalSquarePlatform(object) {
   return object.name === 'Plane' && (parentName === 'Scene 1' || parentName === 'Scene_1');
 }
 
-function isArmAccessory(object) {
-  const lineage = getLineage(object).join(' ');
-  return /UI|Target|Floor|Camera|Directional_Light|Default_Ambient_Light/i.test(lineage);
-}
-
 function findEyeSpheres(root) {
   const result = [];
   root.traverse((object) => {
@@ -735,6 +731,19 @@ function rotateToward(joint, axis, value, amount = 0.1) {
   joint.rotation[axis] += (base + value - joint.rotation[axis]) * amount;
 }
 
+function moveRobotPartsForJump(offset) {
+  [head, body].forEach((part) => {
+    if (part && Number.isFinite(part.userData.baseY)) {
+      part.position.y = part.userData.baseY + offset;
+    }
+  });
+}
+
+function jumpOffsetForRobotParts() {
+  if (!body || !Number.isFinite(body.userData.baseY)) return 0;
+  return body.position.y - body.userData.baseY;
+}
+
 function updateArm(seconds) {
   if (!armScene) return;
   const sweep = Math.sin(seconds * 0.45);
@@ -763,10 +772,10 @@ function updateRobotActions(seconds) {
   if (!robotScene) return 0;
 
   if (!robotAction.type && seconds >= robotAction.nextAt) {
-    const actions = ['heart', 'bubble'];
+    const actions = ['jump', 'heart', 'bubble'];
     robotAction.type = actions[Math.floor(Math.random() * actions.length)];
     robotAction.start = seconds;
-    robotAction.duration = robotAction.type === 'heart' ? 4.0 : 5.0;
+    robotAction.duration = robotAction.type === 'jump' ? 1.5 : robotAction.type === 'heart' ? 4.0 : 5.0;
   }
 
   const elapsed = robotAction.type ? seconds - robotAction.start : 0;
@@ -782,7 +791,7 @@ function updateRobotActions(seconds) {
   }
 
   const envelope = Math.sin(progress * Math.PI);
-  actionRoot.position.set(0, robotScene.position.y - robotScene.userData.baseY, 0);
+  actionRoot.position.set(0, jumpOffsetForRobotParts(), 0);
 
   if (robotAction.type === 'jump') {
     setSpriteOpacity(actionSprites.heart, 0);
@@ -826,9 +835,7 @@ function animate(time) {
     robotRoot.rotation.y += (idleX - robotRoot.rotation.y) * 0.045;
     robotRoot.position.y = Math.sin(seconds * 0.72) * 0.055 + (active ? Math.sin(seconds * 2.8) * 0.024 : 0);
     robotRoot.scale.setScalar(1 + (hovered ? 0.025 : 0) + (active ? 0.035 : 0));
-    if (robotScene) {
-      robotScene.position.y = robotScene.userData.baseY + jumpOffset;
-    }
+    moveRobotPartsForJump(jumpOffset);
 
     if (head) {
       head.rotation.y += (focusX * 0.56 - head.rotation.y) * 0.1;
