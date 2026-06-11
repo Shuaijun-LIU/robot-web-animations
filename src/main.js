@@ -149,6 +149,10 @@ loader.load(armModelUrl, (gltf) => {
   armScene = gltf.scene;
   normalizeModelToGround(armScene, 1.82, -0.12);
   armScene.traverse((object) => {
+    if (isArmAccessory(object)) {
+      object.visible = false;
+      return;
+    }
     if (object.isMesh) {
       object.castShadow = true;
       object.receiveShadow = true;
@@ -486,7 +490,7 @@ function labelButton(buttonObject) {
     transparent: true,
     depthWrite: false,
   });
-  const label = new THREE.Mesh(new THREE.PlaneGeometry(68, 22), material);
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(82, 26), material);
   label.name = 'Nebulis_Button_Label';
   label.position.set(-0.15, -1.2, 0.85);
   label.renderOrder = 3;
@@ -495,8 +499,8 @@ function labelButton(buttonObject) {
 
 function createButtonLabelTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 2600;
-  canvas.height = 720;
+  canvas.width = 3200;
+  canvas.height = 860;
   const context = canvas.getContext('2d');
 
   const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
@@ -505,12 +509,12 @@ function createButtonLabelTexture() {
   gradient.addColorStop(1, '#fff1a6');
 
   context.clearRect(0, 0, canvas.width, canvas.height);
-  context.font = '850 300px Inter, Arial, sans-serif';
+  context.font = '850 360px Inter, Arial, sans-serif';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.shadowColor = 'rgba(0, 12, 35, 0.85)';
   context.shadowBlur = 18;
-  context.lineWidth = 18;
+  context.lineWidth = 22;
   context.strokeStyle = 'rgba(7, 11, 28, 0.95)';
   context.strokeText('NEBULIS Lab', canvas.width / 2, canvas.height / 2 + 10);
   context.fillStyle = gradient;
@@ -628,6 +632,11 @@ function isPedestalPart(object) {
 function isOriginalSquarePlatform(object) {
   const parentName = object.parent?.name;
   return object.name === 'Plane' && (parentName === 'Scene 1' || parentName === 'Scene_1');
+}
+
+function isArmAccessory(object) {
+  const lineage = getLineage(object).join(' ');
+  return /UI|Target|Floor|Camera|Directional_Light|Default_Ambient_Light/i.test(lineage);
 }
 
 function findEyeSpheres(root) {
@@ -754,10 +763,10 @@ function updateRobotActions(seconds) {
   if (!robotScene) return 0;
 
   if (!robotAction.type && seconds >= robotAction.nextAt) {
-    const actions = ['jump', 'heart', 'bubble'];
+    const actions = ['heart', 'bubble'];
     robotAction.type = actions[Math.floor(Math.random() * actions.length)];
     robotAction.start = seconds;
-    robotAction.duration = robotAction.type === 'jump' ? 1.5 : robotAction.type === 'heart' ? 4.0 : 5.0;
+    robotAction.duration = robotAction.type === 'heart' ? 4.0 : 5.0;
   }
 
   const elapsed = robotAction.type ? seconds - robotAction.start : 0;
