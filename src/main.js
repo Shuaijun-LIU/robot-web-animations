@@ -334,7 +334,7 @@ function createActionSprites() {
     opacity: 0,
     depthWrite: false,
   }));
-  heart.position.set(0.18, 1.55, 1.08);
+  heart.position.set(0.18, 1.36, 1.08);
   heart.scale.set(0.36, 0.36, 0.36);
   heart.visible = false;
   actionRoot.add(heart);
@@ -345,7 +345,7 @@ function createActionSprites() {
     opacity: 0,
     depthWrite: false,
   }));
-  bubble.position.set(0.74, 1.45, 1.12);
+  bubble.position.set(0.74, 1.22, 1.12);
   bubble.scale.set(1.1, 0.46, 1);
   bubble.visible = false;
   actionRoot.add(bubble);
@@ -396,9 +396,9 @@ function createBubbleTexture() {
   context.stroke();
 
   context.beginPath();
-  context.moveTo(184, 236);
-  context.lineTo(124, 296);
-  context.lineTo(270, 238);
+  context.moveTo(184, 248);
+  context.lineTo(124, 312);
+  context.lineTo(270, 250);
   context.closePath();
   context.fill();
   context.stroke();
@@ -757,7 +757,7 @@ function updateRobotActions(seconds) {
     const actions = ['jump', 'heart', 'bubble'];
     robotAction.type = actions[Math.floor(Math.random() * actions.length)];
     robotAction.start = seconds;
-    robotAction.duration = robotAction.type === 'jump' ? 1.15 : robotAction.type === 'heart' ? 2.6 : 3.4;
+    robotAction.duration = robotAction.type === 'jump' ? 1.5 : robotAction.type === 'heart' ? 4.0 : 5.0;
   }
 
   const elapsed = robotAction.type ? seconds - robotAction.start : 0;
@@ -784,14 +784,14 @@ function updateRobotActions(seconds) {
   if (robotAction.type === 'heart') {
     setSpriteOpacity(actionSprites.bubble, 0);
     setSpriteOpacity(actionSprites.heart, Math.min(1, envelope * 1.4));
-    actionSprites.heart.position.y = 1.58 + envelope * 0.24;
+    actionSprites.heart.position.y = 1.36 + envelope * 0.18;
     actionSprites.heart.scale.setScalar(0.32 + envelope * 0.16);
     return 0;
   }
 
   setSpriteOpacity(actionSprites.heart, 0);
   setSpriteOpacity(actionSprites.bubble, Math.min(1, envelope * 1.35));
-  actionSprites.bubble.position.y = 1.42 + envelope * 0.08;
+  actionSprites.bubble.position.y = 1.22 + envelope * 0.05;
   actionSprites.bubble.scale.set(1.08 + envelope * 0.06, 0.45 + envelope * 0.03, 1);
   return 0;
 }
